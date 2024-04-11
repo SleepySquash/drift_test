@@ -1,12 +1,12 @@
 import 'package:drift/drift.dart';
 import 'connection/connection.dart' as impl;
 
-import 'chat.dart';
-import 'user.dart';
+import '/domain/model/chat.dart';
+import '/domain/model/user.dart';
 
 part 'drift.g.dart';
 
-@DriftDatabase(tables: [DtoUsers, DtoChats])
+@DriftDatabase(tables: [DtoUser, DtoChat])
 class DriftProvider extends _$DriftProvider {
   DriftProvider() : super(impl.connect()) {
     notifyUpdates({for (final table in allTables) TableUpdate.onTable(table)});

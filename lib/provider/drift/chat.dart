@@ -1,13 +1,5 @@
-import 'package:drift/drift.dart';
-
 import '/domain/model/chat.dart';
 import 'drift.dart';
-
-class DtoChats extends Table {
-  TextColumn get id => text().unique()();
-  TextColumn get name => text()();
-  DateTimeColumn get createdAt => dateTime()();
-}
 
 class ChatDriftProvider {
   ChatDriftProvider(this.database);
@@ -15,42 +7,24 @@ class ChatDriftProvider {
   final DriftProvider database;
 
   Future<List<Chat>> chats() async {
-    final dto = await database.select(database.dtoChats).get();
-    return dto.map(_ChatDb.fromDb).toList();
+    final dto = await database.select(database.dtoChat).get();
+    return dto.map(ChatDtoExtension.fromDto).toList();
   }
 
   Future<void> create(Chat chat) async {
-    await database.into(database.dtoChats).insert(_ChatDb.toDb(chat));
+    await database.into(database.dtoChat).insert(chat.toDto());
   }
 
   Future<void> delete(ChatId id) async {
-    final stmt = database.delete(database.dtoChats)
-      ..where((e) => e.id.equals(id.val));
+    final stmt = database.delete(database.dtoChat)
+      ..where((e) => e.idVal.equals(id.val));
 
     await stmt.go();
   }
 
   Stream<List<Chat>> watch() {
-    return database.select(database.dtoChats).watch().expand(
-          (chats) => [chats.map(_ChatDb.fromDb).toList()],
+    return database.select(database.dtoChat).watch().expand(
+          (chats) => [chats.map(ChatDtoExtension.fromDto).toList()],
         );
-  }
-}
-
-extension _ChatDb on Chat {
-  static Chat fromDb(DtoChat e) {
-    return Chat(
-      id: ChatId(e.id),
-      name: ChatName(e.name),
-      createdAt: e.createdAt,
-    );
-  }
-
-  static DtoChat toDb(Chat e) {
-    return DtoChat(
-      id: e.id.val,
-      name: e.name.val,
-      createdAt: e.createdAt,
-    );
   }
 }

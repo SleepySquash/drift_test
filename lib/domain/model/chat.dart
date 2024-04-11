@@ -1,6 +1,13 @@
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '/generator/generator.dart';
+import '/provider/drift/drift.dart';
+
+part 'chat.drift.g.dart';
+
+@DriftType()
 class Chat {
   const Chat({
     required this.id,
