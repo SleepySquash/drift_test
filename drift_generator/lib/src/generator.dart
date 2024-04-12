@@ -1,7 +1,8 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
-
 import 'package:source_gen/source_gen.dart';
+
+import 'annotation.dart';
 
 class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   @override
@@ -149,16 +150,12 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   }
 }
 
-Builder getBuilder(BuilderOptions options) {
-  return PartBuilder([TypeAdapterGenerator()], '.drift.g.dart');
-}
-
-class DriftType {
-  const DriftType();
-}
-
 extension StringExtension on String {
   String capitalizeFirst() {
     return '${this[0].toUpperCase()}${substring(1)}';
   }
+}
+
+Builder driftBuilder(BuilderOptions options) {
+  return PartBuilder([TypeAdapterGenerator()], '.drift.g.dart');
 }

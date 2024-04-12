@@ -18,9 +18,8 @@ dependencies:
   json_annotation: ^4.8.1
   uuid: ^4.3.3
   collection: ^1.18.0
-  build: ^2.0.0
-  source_gen: ^1.0.0
-  analyzer: ^6.4.1
+  drift_generator:
+    path: ./drift_generator/
 
 dev_dependencies:
   flutter_test:

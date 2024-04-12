@@ -12,14 +12,3 @@ targets:
         release_options:
           dart2js_args:
             - -O4
-      drift_test|drift_generator:
-        enabled: true
-
-builders:
-  drift_generator:
-    import: "package:drift_test/generator/generator.dart"
-    builder_factories: [ "getBuilder" ]
-    build_extensions: { ".dart": [ ".drift.g.dart" ] }
-    auto_apply: dependents
-    build_to: source
-    runs_before: ["drift_dev"]
