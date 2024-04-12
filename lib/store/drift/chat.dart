@@ -5,6 +5,7 @@ import 'package:drift_test/provider/drift/chat.dart';
 import 'package:get/get.dart';
 
 import '/domain/repository/chat.dart';
+import '/util/diff.dart';
 
 class ChatRepository extends DisposableInterface
     implements AbstractChatRepository {
@@ -13,7 +14,7 @@ class ChatRepository extends DisposableInterface
   final ChatDriftProvider _provider;
 
   @override
-  final RxList<Chat> chats = RxList();
+  final RxMap<ChatId, Chat> chats = RxMap();
 
   StreamSubscription? _subscription;
 
@@ -41,8 +42,15 @@ class ChatRepository extends DisposableInterface
 
   Future<void> _init() async {
     _subscription = _provider.watch().listen((e) {
-      chats.value = e;
-      print('[watch] e: $e');
+      switch (e.op) {
+        case OperationKind.added:
+        case OperationKind.updated:
+          chats[e.key!] = e.value!;
+          break;
+        case OperationKind.removed:
+          chats.remove(e.key);
+      }
+      print('[watch] e: ${e.op} ${e.key?.val}');
     });
   }
 }

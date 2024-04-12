@@ -44,7 +44,7 @@ class HomeView extends StatelessWidget {
       body: Obx(() {
         return ListView(
           children: [
-            ...c.users.map((e) {
+            ...c.users.values.map((e) {
               return ListTile(
                 title: Text(e.name.val),
                 subtitle: Text(e.id.val),
@@ -69,7 +69,7 @@ class HomeView extends StatelessWidget {
       body: Obx(() {
         return ListView(
           children: [
-            ...c.chats.map((e) {
+            ...c.chats.values.map((e) {
               return ListTile(
                 title: Text(e.name.val),
                 subtitle: Text(e.id.val),

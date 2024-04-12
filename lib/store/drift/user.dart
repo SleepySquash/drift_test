@@ -5,6 +5,7 @@ import 'package:drift_test/provider/drift/user.dart';
 import 'package:get/get.dart';
 
 import '/domain/repository/user.dart';
+import '/util/diff.dart';
 
 class UserRepository extends DisposableInterface
     implements AbstractUserRepository {
@@ -13,7 +14,7 @@ class UserRepository extends DisposableInterface
   final UserDriftProvider _provider;
 
   @override
-  final RxList<User> users = RxList();
+  final RxMap<UserId, User> users = RxMap();
 
   StreamSubscription? _subscription;
 
@@ -41,8 +42,15 @@ class UserRepository extends DisposableInterface
 
   Future<void> _init() async {
     _subscription = _provider.watch().listen((e) {
-      users.value = e;
-      print('[watch] e: $e');
+      switch (e.op) {
+        case OperationKind.added:
+        case OperationKind.updated:
+        users[e.key!] = e.value!;
+          break;
+        case OperationKind.removed:
+          users.remove(e.key);
+      }
+      print('[watch] e: ${e.op} ${e.key?.val}');
     });
   }
 }
