@@ -18,8 +18,8 @@ class HomeController extends GetxController {
 
   final AbstractChatRepository _chatRepository;
 
-  RxList<User> get users => _userRepository.users;
-  RxList<Chat> get chats => _chatRepository.chats;
+  RxMap<UserId, User> get users => _userRepository.users;
+  RxMap<ChatId, Chat> get chats => _chatRepository.chats;
 
   Future<void> createUser() async {
     await _userRepository.create(User.random());
