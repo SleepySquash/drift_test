@@ -1,4 +1,5 @@
 import '/domain/model/chat.dart';
+import '/util/diff.dart';
 import 'drift.dart';
 
 class ChatDriftProvider {
@@ -22,9 +23,15 @@ class ChatDriftProvider {
     await stmt.go();
   }
 
-  Stream<List<Chat>> watch() {
-    return database.select(database.dtoChat).watch().expand(
-          (chats) => [chats.map(ChatDtoExtension.fromDto).toList()],
-        );
+  Stream<MapChangeNotification<ChatId, Chat>> watch() {
+    return database
+        .select(database.dtoChat)
+        .watch()
+        .map(
+          (chats) => {
+            for (var e in chats.map(ChatDtoExtension.fromDto)) e.id: e,
+          },
+        )
+        .changes();
   }
 }

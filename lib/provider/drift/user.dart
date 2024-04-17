@@ -1,4 +1,5 @@
 import '/domain/model/user.dart';
+import '/util/diff.dart';
 import 'drift.dart';
 
 class UserDriftProvider {
@@ -26,7 +27,7 @@ class UserDriftProvider {
     print('delete($id): affected $affected rows');
   }
 
-  Stream<List<User>> watch() {
+  Stream<MapChangeNotification<UserId, User>> watch() {
     // final query = database.select(database.dtoUsers);
     // final updateFilter = TableUpdateQuery.onTable(
     //   database.dtoUsers,
@@ -64,8 +65,14 @@ class UserDriftProvider {
     //   },
     // ).listen((_) {});
 
-    return database.select(database.dtoUser).watch().expand(
-          (users) => [users.map(UserDtoExtension.fromDto).toList()],
-        );
+    return database
+        .select(database.dtoUser)
+        .watch()
+        .map(
+          (users) => {
+            for (var e in users.map(UserDtoExtension.fromDto)) e.id: e,
+          },
+        )
+        .changes();
   }
 }
