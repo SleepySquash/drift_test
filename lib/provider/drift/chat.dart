@@ -36,7 +36,7 @@ class ChatDriftProvider {
         .select(database.dtoChats)
         .watch()
         .map((chats) => {for (var e in chats.map(_ChatDb.fromDb)) e.id: e})
-        .changes((e) => e.id);
+        .changes();
   }
 }
 

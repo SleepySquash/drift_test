@@ -77,7 +77,7 @@ class UserDriftProvider {
         .select(database.dtoUsers)
         .watch()
         .map((users) => {for (var e in users.map(_UserDb.fromDb)) e.id: e})
-        .changes((e) => e.id);
+        .changes();
   }
 }
 

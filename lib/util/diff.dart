@@ -1,7 +1,7 @@
 /// Extension adding an ability to get [MapChangeNotification]s from [Stream].
 extension MapChangesExtension<K, T> on Stream<Map<K, T>> {
   /// Gets [MapChangeNotification]s from [Stream].
-  Stream<MapChangeNotification<K, T>> changes(dynamic Function(T) getId) {
+  Stream<MapChangeNotification<K, T>> changes() {
     Map<K, T> last = {};
 
     return asyncExpand((e) async* {
