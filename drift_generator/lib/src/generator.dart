@@ -4,14 +4,14 @@ import 'package:source_gen/source_gen.dart';
 
 import 'annotation.dart';
 
-class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
+class DriftTypeGenerator extends GeneratorForAnnotation<DriftType> {
   @override
   Future<String> generateForAnnotatedElement(
     Element element,
     ConstantReader annotation,
     BuildStep buildStep,
   ) async {
-    InterfaceElement interface = getInterface(element);
+    final InterfaceElement interface = getInterface(element);
 
     final String dto =
         'Dto${interface.name.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '')}';
@@ -41,9 +41,16 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   }
 
   String dtoFields(InterfaceElement element, {String prefix = ''}) {
+    final ConstructorElement constr =
+        element.constructors.firstWhere((it) => it.name.isEmpty);
+
     final buffer = StringBuffer();
 
-    for (var e in element.fields) {
+    for (FieldElement e in element.fields) {
+      if (!constr.parameters.any((p) => p.name == e.name)) {
+        continue;
+      }
+
       String name = e.name;
 
       if (prefix.isNotEmpty) {
@@ -60,7 +67,7 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
         buffer.writeln('IntColumn get $name => intEnum()();');
       } else if (e.type.isDartCoreBool) {
         buffer.writeln('BoolColumn get $name => boolean()();');
-      }  else if (e.type.toString() == 'DateTime') {
+      } else if (e.type.toString() == 'DateTime') {
         buffer.writeln('DateTimeColumn get $name => dateTime()();');
       } else if (e.type.element is InterfaceElement) {
         buffer.writeln(
@@ -73,7 +80,7 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   }
 
   String fromDto(InterfaceElement element, {String prefix = ''}) {
-    ConstructorElement constr =
+    final ConstructorElement constr =
         element.constructors.firstWhere((it) => it.name.isEmpty);
 
     final buffer = StringBuffer();
@@ -108,9 +115,16 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   }
 
   String toDto(InterfaceElement element, {List<String> prefixes = const []}) {
+    final ConstructorElement constr =
+        element.constructors.firstWhere((it) => it.name.isEmpty);
+
     final buffer = StringBuffer();
 
-    for (var e in element.fields) {
+    for (FieldElement e in element.fields) {
+      if (!constr.parameters.any((p) => p.name == e.name)) {
+        continue;
+      }
+
       String name1 = e.name;
       String name2 = e.name;
 
@@ -139,9 +153,9 @@ class TypeAdapterGenerator extends GeneratorForAnnotation<DriftType> {
   }
 
   InterfaceElement getInterface(Element element) {
-    if (element.kind != ElementKind.CLASS && element.kind != ElementKind.ENUM) {
+    if (element.kind != ElementKind.CLASS) {
       throw InvalidGenerationSourceError(
-        'Only classes or enums are allowed to be annotated with @DriftType.',
+        'Only classes are allowed to be annotated with @$DriftType.',
         element: element,
       );
     }
@@ -157,5 +171,5 @@ extension StringExtension on String {
 }
 
 Builder driftBuilder(BuilderOptions options) {
-  return PartBuilder([TypeAdapterGenerator()], '.drift.g.dart');
+  return PartBuilder([DriftTypeGenerator()], '.drift.g.dart');
 }
