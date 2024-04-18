@@ -1,0 +1,3 @@
+class DriftType {
+  const DriftType();
+}

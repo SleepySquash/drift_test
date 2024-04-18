@@ -1,14 +1,6 @@
-import 'package:drift/drift.dart';
-
 import '/domain/model/user.dart';
 import '/util/diff.dart';
 import 'drift.dart';
-
-class DtoUsers extends Table {
-  TextColumn get id => text().unique()();
-  TextColumn get name => text()();
-  DateTimeColumn get createdAt => dateTime()();
-}
 
 class UserDriftProvider {
   UserDriftProvider(this.database);
@@ -16,20 +8,20 @@ class UserDriftProvider {
   final DriftProvider database;
 
   Future<List<User>> users() async {
-    final dto = await database.select(database.dtoUsers).get();
-    return dto.map(_UserDb.fromDb).toList();
+    final dto = await database.select(database.dtoUser).get();
+    return dto.map(UserDtoExtension.fromDto).toList();
   }
 
   Future<void> create(User user) async {
     final int affected =
-        await database.into(database.dtoUsers).insert(_UserDb.toDb(user));
+        await database.into(database.dtoUser).insert(user.toDto());
 
     print('create($user): affected $affected rows');
   }
 
   Future<void> delete(UserId id) async {
-    final stmt = database.delete(database.dtoUsers)
-      ..where((e) => e.id.equals(id.val));
+    final stmt = database.delete(database.dtoUser)
+      ..where((e) => e.idVal.equals(id.val));
     final int affected = await stmt.go();
 
     print('delete($id): affected $affected rows');
@@ -74,27 +66,13 @@ class UserDriftProvider {
     // ).listen((_) {});
 
     return database
-        .select(database.dtoUsers)
+        .select(database.dtoUser)
         .watch()
-        .map((users) => {for (var e in users.map(_UserDb.fromDb)) e.id: e})
+        .map(
+          (users) => {
+            for (var e in users.map(UserDtoExtension.fromDto)) e.id: e,
+          },
+        )
         .changes();
-  }
-}
-
-extension _UserDb on User {
-  static User fromDb(DtoUser e) {
-    return User(
-      id: UserId(e.id),
-      name: UserName(e.name),
-      createdAt: e.createdAt,
-    );
-  }
-
-  static DtoUser toDb(User e) {
-    return DtoUser(
-      id: e.id.val,
-      name: e.name.val,
-      createdAt: e.createdAt,
-    );
   }
 }

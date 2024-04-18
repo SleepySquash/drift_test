@@ -1,0 +1,12 @@
+name: drift_generator
+description: Extension for Drift. Automatically generates Dto to store any class.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.3 <4.0.0'
+
+dependencies:
+  build: ^2.0.0
+  source_gen: ^1.0.0
+  analyzer: ^6.4.1

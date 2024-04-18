@@ -1,6 +1,13 @@
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
+import 'package:drift_generator/drift_generator.dart';
 import 'package:uuid/uuid.dart';
 
+import '/provider/drift/drift.dart';
+
+part 'user.drift.g.dart';
+
+@DriftType()
 class User {
   const User({
     required this.id,
