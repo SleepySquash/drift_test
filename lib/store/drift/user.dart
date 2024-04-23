@@ -45,7 +45,7 @@ class UserRepository extends DisposableInterface
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-        users[e.key!] = e.value!;
+          users[e.key!] = e.value!;
           break;
         case OperationKind.removed:
           users.remove(e.key);

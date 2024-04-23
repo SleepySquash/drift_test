@@ -1,4 +1,5 @@
 import 'package:drift_test/domain/repository/user.dart';
+import 'package:drift_test/provider/drift/chat_member.dart';
 import 'package:drift_test/provider/drift/drift.dart';
 import 'package:drift_test/provider/drift/user.dart';
 import 'package:drift_test/store/drift/user.dart';
@@ -19,9 +20,12 @@ void main() async {
 
   final userProvider = Get.put(UserDriftProvider(database));
   final chatProvider = Get.put(ChatDriftProvider(database));
+  final chatMemberProvider = Get.put(ChatMemberDriftProvider(database));
 
   Get.put<AbstractUserRepository>(UserRepository(userProvider));
-  Get.put<AbstractChatRepository>(ChatRepository(chatProvider));
+  Get.put<AbstractChatRepository>(
+    ChatRepository(chatProvider, chatMemberProvider),
+  );
 
   runApp(const MyApp());
 }

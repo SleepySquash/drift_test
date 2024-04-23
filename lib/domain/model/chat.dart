@@ -1,4 +1,6 @@
 import 'package:collection/collection.dart';
+import 'package:drift_test/domain/model/chat_member.dart';
+import 'package:drift_test/domain/model/user.dart';
 import 'package:uuid/uuid.dart';
 
 class Chat {
@@ -6,15 +8,20 @@ class Chat {
     required this.id,
     required this.name,
     required this.createdAt,
+    required this.members,
   });
 
-  factory Chat.random() => Chat(
-        id: ChatId(const Uuid().v4()),
-        name: ChatName(
-          'qwertyuiopasdfghjklzxcvbnm'.toUpperCase().split('').sample(1).first,
-        ),
-        createdAt: DateTime.now(),
-      );
+  factory Chat.random() {
+    final id = ChatId(const Uuid().v4());
+    return Chat(
+      id: id,
+      name: ChatName(
+        'qwertyuiopasdfghjklzxcvbnm'.toUpperCase().split('').sample(1).first,
+      ),
+      createdAt: DateTime.now(),
+      members: List.generate(5, (_) => ChatMember.random(id)),
+    );
+  }
 
   final ChatId id;
   final ChatName name;

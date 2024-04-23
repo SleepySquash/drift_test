@@ -70,14 +70,46 @@ class HomeView extends StatelessWidget {
         return ListView(
           children: [
             ...c.chats.values.map((e) {
-              return ListTile(
-                title: Text(e.name.val),
-                subtitle: Text(e.id.val),
-                trailing: IconButton(
-                  onPressed: () => c.deleteChat(e.id),
-                  icon: const Icon(Icons.delete),
-                ),
-              );
+              return Obx(() {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      title: Text(e.chat.value.name.val),
+                      subtitle: Text(e.id.val),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () => c.addMember(e.id),
+                            icon: const Icon(Icons.add),
+                          ),
+                          IconButton(
+                            onPressed: () => c.deleteChat(e.id),
+                            icon: const Icon(Icons.delete),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...e.chat.value.members.map(
+                      (e) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(e.id.val),
+                          ),
+                          IconButton(
+                            onPressed: () => c.deleteMember(e.id),
+                            icon: const Icon(Icons.delete),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              });
             }),
           ],
         );
