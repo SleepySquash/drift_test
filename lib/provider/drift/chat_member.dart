@@ -27,7 +27,9 @@ class ChatMemberDriftProvider {
   $DtoUsersTable get dtoUsers => _database.dtoUsers;
 
   Future<List<ChatMember>> members(ChatId id, {int? limit}) async {
-    final query = _database.select(dtoChatMembers).join([
+    final query = (_database.select(dtoChatMembers)
+          ..where((m) => m.chatId.equals(id.val)))
+        .join([
       innerJoin(dtoUsers, dtoUsers.id.equalsExp(dtoChatMembers.userId)),
     ]);
 

@@ -26,7 +26,7 @@ class ChatDriftProvider {
   $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
 
   Future<List<Chat>> chats() async {
-    final dto = await _database.select(_database.dtoChats).get();
+    final dto = await _database.select(dtoChats).get();
     return dto.map((e) => _ChatDb.fromDb(e, [])).toList();
   }
 
