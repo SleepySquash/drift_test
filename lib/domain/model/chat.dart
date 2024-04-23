@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:drift_test/domain/model/chat_member.dart';
-import 'package:drift_test/domain/model/user.dart';
 import 'package:uuid/uuid.dart';
 
 class Chat {

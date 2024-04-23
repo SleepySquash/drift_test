@@ -15,35 +15,37 @@ class DtoChats extends Table {
 }
 
 class ChatDriftProvider {
-  ChatDriftProvider(this.database);
+  ChatDriftProvider(this._database, this._membersProvider);
 
-  final DriftProvider database;
+  final DriftProvider _database;
 
-  $DtoChatsTable get dtoChats => database.dtoChats;
+  final ChatMemberDriftProvider _membersProvider;
 
-  $DtoChatMembersTable get dtoChatMembers => database.dtoChatMembers;
+  $DtoChatsTable get dtoChats => _database.dtoChats;
+
+  $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
 
   Future<List<Chat>> chats() async {
-    final dto = await database.select(database.dtoChats).get();
+    final dto = await _database.select(_database.dtoChats).get();
     return dto.map((e) => _ChatDb.fromDb(e, [])).toList();
   }
 
   Future<void> create(Chat chat) async {
-    await database.into(dtoChats).insert(_ChatDb.toDb(chat));
+    await _database.into(dtoChats).insert(chat.toDb());
 
-    for (var element in chat.members) {
-      database.into(dtoChatMembers).insert(ChatMemberDb.toDb(element));
+    for (var e in chat.members) {
+      await _membersProvider.create(e);
     }
   }
 
   Future<void> delete(ChatId id) async {
-    final stmt = database.delete(dtoChats)..where((e) => e.id.equals(id.val));
+    final stmt = _database.delete(dtoChats)..where((e) => e.id.equals(id.val));
 
     await stmt.go();
   }
 
   Stream<MapChangeNotification<ChatId, Chat>> watch() {
-    return database
+    return _database
         .select(dtoChats)
         .watch()
         .map((dtoChats) {
@@ -54,12 +56,10 @@ class ChatDriftProvider {
         .changes()
         .asyncMap((event) async {
           if (event.op == OperationKind.added && event.value != null) {
-            final query = database.select(dtoChatMembers)
-              ..where((m) => m.chatId.equals(event.value!.id.val))
-              ..limit(3);
+            final members =
+                await _membersProvider.members(event.value!.id, limit: 3);
 
-            event.value?.members
-                .addAll((await query.get()).map(ChatMemberDb.fromDb));
+            event.value?.members.addAll(members);
           }
 
           return event;
@@ -77,11 +77,11 @@ extension _ChatDb on Chat {
     );
   }
 
-  static DtoChat toDb(Chat e) {
+  DtoChat toDb() {
     return DtoChat(
-      id: e.id.val,
-      name: e.name.val,
-      createdAt: e.createdAt,
+      id: id.val,
+      name: name.val,
+      createdAt: createdAt,
     );
   }
 }

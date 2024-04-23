@@ -30,6 +30,10 @@ class HomeController extends GetxController {
     await _userRepository.delete(id);
   }
 
+  Future<void> updateUser(UserId id) async {
+    await _userRepository.update(id);
+  }
+
   Future<void> createChat() async {
     await _chatRepository.create(Chat.random());
   }

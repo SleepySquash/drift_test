@@ -26,12 +26,19 @@ class RxChat {
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-          chat.value.members.addIf(
-              chat.value.members.none((m) => m.id == e.value!.id), e.value!);
+          final int i = chat.value.members
+              .indexWhere((m) => m.user.id == e.value!.user.id);
+
+          if (i == -1) {
+            chat.value.members.add(e.value!);
+          } else {
+            chat.value.members[i] = e.value!;
+          }
+
           chat.refresh();
           break;
         case OperationKind.removed:
-          chat.value.members.removeWhere((m) => m.id == e.key);
+          chat.value.members.removeWhere((m) => m.user.id == e.key);
           chat.refresh();
           break;
       }

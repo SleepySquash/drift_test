@@ -19,8 +19,9 @@ void main() async {
   final database = Get.put(DriftProvider());
 
   final userProvider = Get.put(UserDriftProvider(database));
-  final chatProvider = Get.put(ChatDriftProvider(database));
-  final chatMemberProvider = Get.put(ChatMemberDriftProvider(database));
+  final chatMemberProvider =
+      Get.put(ChatMemberDriftProvider(database, userProvider));
+  final chatProvider = Get.put(ChatDriftProvider(database, chatMemberProvider));
 
   Get.put<AbstractUserRepository>(UserRepository(userProvider));
   Get.put<AbstractChatRepository>(

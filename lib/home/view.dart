@@ -48,9 +48,18 @@ class HomeView extends StatelessWidget {
               return ListTile(
                 title: Text(e.name.val),
                 subtitle: Text(e.id.val),
-                trailing: IconButton(
-                  onPressed: () => c.deleteUser(e.id),
-                  icon: const Icon(Icons.delete),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () => c.updateUser(e.id),
+                      icon: const Icon(Icons.refresh),
+                    ),
+                    IconButton(
+                      onPressed: () => c.deleteUser(e.id),
+                      icon: const Icon(Icons.delete),
+                    ),
+                  ],
                 ),
               );
             }),
@@ -98,10 +107,14 @@ class HomeView extends StatelessWidget {
                         children: [
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(e.id.val),
+                            child: Text(e.user.id.val),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(e.user.name.val),
                           ),
                           IconButton(
-                            onPressed: () => c.deleteMember(e.id),
+                            onPressed: () => c.deleteMember(e.user.id),
                             icon: const Icon(Icons.delete),
                           ),
                         ],

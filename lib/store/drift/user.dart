@@ -40,6 +40,15 @@ class UserRepository extends DisposableInterface
     await _provider.delete(id);
   }
 
+  @override
+  Future<void> update(UserId id) async {
+    final User? user = users[id];
+
+    if (user != null) {
+      await _provider.update(user.copyWith(name: User.random().name));
+    }
+  }
+
   Future<void> _init() async {
     _subscription = _provider.watch().listen((e) {
       switch (e.op) {

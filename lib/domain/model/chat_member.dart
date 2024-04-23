@@ -4,22 +4,22 @@ import 'package:uuid/uuid.dart';
 
 class ChatMember {
   const ChatMember({
-    required this.id,
+    required this.user,
     required this.chatId,
   });
 
   factory ChatMember.random(ChatId id) => ChatMember(
-        id: UserId(const Uuid().v4()),
+        user: User.random(),
         chatId: id,
       );
 
-  final UserId id;
+  final User user;
   final ChatId chatId;
 
   @override
-  int get hashCode => Object.hash(id, chatId);
+  int get hashCode => Object.hash(user, chatId);
 
   @override
   bool operator ==(Object other) =>
-      other is ChatMember && id == other.id && chatId == other.chatId;
+      other is ChatMember && user == other.user && chatId == other.chatId;
 }

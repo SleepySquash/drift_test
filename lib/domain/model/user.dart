@@ -29,6 +29,18 @@ class User {
       id == other.id &&
       name == other.name &&
       createdAt == other.createdAt;
+
+  User copyWith({
+    UserId? id,
+    UserName? name,
+    DateTime? createdAt,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
 
 class UserId {

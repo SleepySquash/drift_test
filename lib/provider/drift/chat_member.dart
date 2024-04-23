@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/domain/model/chat_member.dart';
@@ -15,26 +16,51 @@ class DtoChatMembers extends Table {
 }
 
 class ChatMemberDriftProvider {
-  ChatMemberDriftProvider(this.database);
+  ChatMemberDriftProvider(this._database, this._userProvider);
 
-  final DriftProvider database;
+  final DriftProvider _database;
 
-  $DtoChatMembersTable get dtoChatMembers => database.dtoChatMembers;
+  final UserDriftProvider _userProvider;
 
-  Future<List<ChatMember>> members(ChatId id) async {
-    final dto = await database.select(dtoChatMembers).get();
-    return dto.map(ChatMemberDb.fromDb).toList();
+  $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
+
+  $DtoUsersTable get dtoUsers => _database.dtoUsers;
+
+  Future<List<ChatMember>> members(ChatId id, {int? limit}) async {
+    final query = _database.select(dtoChatMembers).join([
+      innerJoin(dtoUsers, dtoUsers.id.equalsExp(dtoChatMembers.userId)),
+    ]);
+
+    if (limit != null) {
+      query.limit(limit);
+    }
+
+    return (await query.get())
+        .map((e) {
+          final userDto = e.readTableOrNull(dtoUsers);
+
+          if (userDto != null) {
+            return ChatMemberDb.fromDb(
+              e.readTable(dtoChatMembers),
+              UserDb.fromDb(userDto),
+            );
+          }
+        })
+        .whereNotNull()
+        .toList();
   }
 
   Future<void> create(ChatMember member) async {
     final int affected =
-        await database.into(dtoChatMembers).insert(ChatMemberDb.toDb(member));
+        await _database.into(dtoChatMembers).insert(member.toDb());
+
+    await _userProvider.create(member.user);
 
     print('create($member): affected $affected rows');
   }
 
   Future<void> delete(UserId id) async {
-    final stmt = database.delete(dtoChatMembers)
+    final stmt = _database.delete(dtoChatMembers)
       ..where((e) => e.userId.equals(id.val));
     final int affected = await stmt.go();
 
@@ -42,28 +68,47 @@ class ChatMemberDriftProvider {
   }
 
   Stream<MapChangeNotification<UserId, ChatMember>> watch(ChatId id) {
-    var query = database.select(dtoChatMembers);
-    query.where((m) => m.chatId.equals(id.val));
+    var query = _database.select(dtoChatMembers)
+      ..where((m) => m.chatId.equals(id.val));
 
     return query
+        .join(
+          [innerJoin(dtoUsers, dtoUsers.id.equalsExp(dtoChatMembers.userId))],
+        )
         .watch()
-        .map((users) => {for (var e in users.map(ChatMemberDb.fromDb)) e.id: e})
+        .map((rows) {
+          Map<UserId, ChatMember> members = {};
+
+          for (var e in rows) {
+            final userDto = e.readTableOrNull(dtoUsers);
+
+            if (userDto != null) {
+              final member = ChatMemberDb.fromDb(
+                e.readTable(dtoChatMembers),
+                UserDb.fromDb(userDto),
+              );
+              members[member.user.id] = member;
+            }
+          }
+
+          return members;
+        })
         .changes();
   }
 }
 
 extension ChatMemberDb on ChatMember {
-  static ChatMember fromDb(DtoChatMember e) {
+  static ChatMember fromDb(DtoChatMember e, User user) {
     return ChatMember(
-      id: UserId(e.userId),
+      user: user,
       chatId: ChatId(e.chatId),
     );
   }
 
-  static DtoChatMember toDb(ChatMember e) {
+  DtoChatMember toDb() {
     return DtoChatMember(
-      userId: e.id.val,
-      chatId: e.chatId.val,
+      userId: user.id.val,
+      chatId: chatId.val,
     );
   }
 }

@@ -6,82 +6,55 @@ import 'drift.dart';
 
 class DtoUsers extends Table {
   TextColumn get id => text().unique()();
+
   TextColumn get name => text()();
+
   DateTimeColumn get createdAt => dateTime()();
 }
 
 class UserDriftProvider {
-  UserDriftProvider(this.database);
+  UserDriftProvider(this._database);
 
-  final DriftProvider database;
+  final DriftProvider _database;
+
+  $DtoUsersTable get dtoUsers => _database.dtoUsers;
 
   Future<List<User>> users() async {
-    final dto = await database.select(database.dtoUsers).get();
-    return dto.map(_UserDb.fromDb).toList();
+    final dto = await _database.select(dtoUsers).get();
+    return dto.map(UserDb.fromDb).toList();
   }
 
   Future<void> create(User user) async {
-    final int affected =
-        await database.into(database.dtoUsers).insert(_UserDb.toDb(user));
+    final int affected = await _database.into(dtoUsers).insert(user.toDb());
 
     print('create($user): affected $affected rows');
   }
 
+  Future<void> update(User user) async {
+    final int affected = await (_database.update(dtoUsers)
+          ..where((u) => u.id.equals(user.id.val)))
+        .write(user.toDb());
+
+    print('update($user): affected $affected rows');
+  }
+
   Future<void> delete(UserId id) async {
-    final stmt = database.delete(database.dtoUsers)
-      ..where((e) => e.id.equals(id.val));
+    final stmt = _database.delete(dtoUsers)..where((e) => e.id.equals(id.val));
     final int affected = await stmt.go();
 
     print('delete($id): affected $affected rows');
   }
 
   Stream<MapChangeNotification<UserId, User>> watch() {
-    // final query = database.select(database.dtoUsers);
-    // final updateFilter = TableUpdateQuery.onTable(
-    //   database.dtoUsers,
-    //   limitUpdateKind: UpdateKind.insert,
-    // );
-
-    // return database.tableUpdates(updateFilter).asyncMap(query.get());
-    // database
-    //     .tableUpdates(TableUpdateQuery.onTable(yourTable,
-    //         limitUpdateKind: UpdateKind.update))
-    //     .asyncMap(query.get());
-
-    // database
-    //     .tableUpdates(TableUpdateQuery.onTable(database.dtoUsers))
-    //     .asyncExpand(
-    //   (events) async* {
-    //     for (var e in events) {
-    //       print('tableUpdates(): ${e.kind}');
-
-    //       switch (e.kind) {
-    //         case UpdateKind.insert:
-    //           break;
-
-    //         case UpdateKind.update:
-    //           break;
-
-    //         case UpdateKind.delete:
-    //           break;
-
-    //         case null:
-    //           // No-op.
-    //           break;
-    //       }
-    //     }
-    //   },
-    // ).listen((_) {});
-
-    return database
-        .select(database.dtoUsers)
+    return _database
+        .select(dtoUsers)
         .watch()
-        .map((users) => {for (var e in users.map(_UserDb.fromDb)) e.id: e})
+        .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
         .changes();
   }
 }
 
-extension _UserDb on User {
+extension UserDb on User {
   static User fromDb(DtoUser e) {
     return User(
       id: UserId(e.id),
@@ -90,11 +63,11 @@ extension _UserDb on User {
     );
   }
 
-  static DtoUser toDb(User e) {
+  DtoUser toDb() {
     return DtoUser(
-      id: e.id.val,
-      name: e.name.val,
-      createdAt: e.createdAt,
+      id: id.val,
+      name: name.val,
+      createdAt: createdAt,
     );
   }
 }
