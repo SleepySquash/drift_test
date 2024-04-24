@@ -59,7 +59,9 @@ class UserRepository extends DisposableInterface
         case OperationKind.removed:
           users.remove(e.key);
       }
-      print('[watch] e: ${e.op} ${e.key?.val}');
+      print(
+        'UserRepository [watch] e: ${e.op} ${e.key?.val}, ${e.value?.name.val}',
+      );
     });
   }
 }

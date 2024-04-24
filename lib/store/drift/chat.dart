@@ -61,7 +61,11 @@ class ChatRepository extends DisposableInterface
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-          chats[e.key!] = RxChat(e.value!, _provider, _membersProvider)..init();
+          if (chats.containsKey(e.key!)) {
+            chats[e.key!]!.chat.value = e.value!;
+          } else {
+            chats[e.key!] = RxChat(e.value!, _provider, _membersProvider);
+          }
           break;
         case OperationKind.removed:
           chats.remove(e.key);

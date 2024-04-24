@@ -55,11 +55,13 @@ class ChatDriftProvider {
         })
         .changes()
         .asyncMap((event) async {
-          if (event.op == OperationKind.added && event.value != null) {
+          if ((event.op == OperationKind.added ||
+                  event.op == OperationKind.updated) &&
+              event.value != null) {
             final members =
                 await _membersProvider.members(event.value!.id, limit: 3);
 
-            event.value?.members.addAll(members);
+            event.value!.members.addAll(members);
           }
 
           return event;

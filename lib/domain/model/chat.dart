@@ -25,6 +25,7 @@ class Chat {
   final ChatId id;
   final ChatName name;
   final DateTime createdAt;
+  final List<ChatMember> members;
 
   @override
   int get hashCode => Object.hash(id, name, createdAt);

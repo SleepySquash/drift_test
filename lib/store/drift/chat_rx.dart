@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/provider/drift/chat.dart';
 import 'package:drift_test/provider/drift/chat_member.dart';
@@ -42,7 +41,7 @@ class RxChat {
           chat.refresh();
           break;
       }
-      print('[watch] in rxChat e: ${e.op} ${e.key?.val}');
+      print('RxChat [watch] e: ${e.op} ${e.key?.val}');
     });
   }
 
