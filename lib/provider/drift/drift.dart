@@ -25,6 +25,9 @@ class DriftProvider extends _$DriftProvider {
       onUpgrade: (m, a, b) async {
         await m.createAll();
       },
+      beforeOpen: (_) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
     );
   }
 }

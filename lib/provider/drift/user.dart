@@ -24,6 +24,14 @@ class UserDriftProvider {
     return dto.map(UserDb.fromDb).toList();
   }
 
+  Future<User> user(UserId id) async {
+    final dto = await (_database.select(dtoUsers)
+          ..where((u) => u.id.equals(id.val)))
+        .getSingle();
+
+    return UserDb.fromDb(dto);
+  }
+
   Future<void> create(User user) async {
     final int affected = await _database.into(dtoUsers).insert(user.toDb());
 

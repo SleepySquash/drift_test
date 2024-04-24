@@ -10,9 +10,10 @@ import '/util/diff.dart';
 import 'drift.dart';
 
 class DtoChatMembers extends Table {
-  TextColumn get userId => text().references(DtoUsers, #id).unique()();
+  TextColumn get userId => text().unique()();
 
-  TextColumn get chatId => text().references(DtoChats, #id)();
+  TextColumn get chatId =>
+      text().references(DtoChats, #id, onDelete: KeyAction.cascade)();
 }
 
 class ChatMemberDriftProvider {

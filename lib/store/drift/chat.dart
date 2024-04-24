@@ -64,13 +64,14 @@ class ChatRepository extends DisposableInterface
           if (chats.containsKey(e.key!)) {
             chats[e.key!]!.chat.value = e.value!;
           } else {
-            chats[e.key!] = RxChat(e.value!, _provider, _membersProvider);
+            chats[e.key!] = RxChat(e.value!, _provider, _membersProvider)
+              ..init();
           }
           break;
         case OperationKind.removed:
           chats.remove(e.key);
       }
-      print('[watch] e: ${e.op} ${e.key?.val}');
+      print('ChatRepository [watch] e: ${e.op} ${e.key?.val}');
     });
   }
 }

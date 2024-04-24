@@ -30,6 +30,14 @@ class UserRepository extends DisposableInterface
     super.onClose();
   }
 
+  Future<User> get(UserId id) async {
+    if(users.containsKey(id)) {
+      return users[id]!;
+    } else {
+      return _provider.user(id);
+    }
+  }
+
   @override
   Future<void> create(User user) async {
     await _provider.create(user);
