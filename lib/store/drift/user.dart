@@ -47,7 +47,8 @@ class UserRepository extends DisposableInterface
     final RxUser? user = users[id];
 
     if (user != null) {
-      await _provider.update(user.user.value.copyWith(name: User.random().name));
+      await _provider
+          .update(user.user.value.copyWith(name: User.random().name));
     }
   }
 

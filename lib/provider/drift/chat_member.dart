@@ -40,7 +40,6 @@ class ChatMemberDriftProvider {
     final List<DtoChatMember> dtoMembers = await query.get();
     List<ChatMember> members = [];
 
-
     for (var e in dtoMembers) {
       final User? user = await getUser?.call(UserId(e.userId));
 

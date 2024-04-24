@@ -32,8 +32,8 @@ class RxChat {
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-          final int i = members
-              .indexWhere((m) => m.user.value.id == e.value!.user.id);
+          final int i =
+              members.indexWhere((m) => m.user.value.id == e.value!.user.id);
 
           final RxUser user = await _chatRepository.getUser(e.value!.user.id);
 
