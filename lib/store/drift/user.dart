@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/provider/drift/user.dart';
+import 'package:drift_test/store/drift/user_rx.dart';
 import 'package:get/get.dart';
 
 import '/domain/repository/user.dart';
@@ -14,28 +15,21 @@ class UserRepository extends DisposableInterface
   final UserDriftProvider _provider;
 
   @override
-  final RxMap<UserId, User> users = RxMap();
+  final RxMap<UserId, RxUser> users = RxMap();
 
-  StreamSubscription? _subscription;
-
-  @override
-  void onInit() {
-    _init();
-    super.onInit();
-  }
+  final Map<UserId, StreamSubscription> _subscriptions = {};
 
   @override
   void onClose() {
-    _subscription?.cancel();
+    for (var e in _subscriptions.values) {
+      e.cancel();
+    }
     super.onClose();
   }
 
-  Future<User> get(UserId id) async {
-    if(users.containsKey(id)) {
-      return users[id]!;
-    } else {
-      return _provider.user(id);
-    }
+  @override
+  Future<User> getUser(UserId id) async {
+    return (await getRxUser(id)).user.value;
   }
 
   @override
@@ -50,19 +44,29 @@ class UserRepository extends DisposableInterface
 
   @override
   Future<void> update(UserId id) async {
-    final User? user = users[id];
+    final RxUser? user = users[id];
 
     if (user != null) {
-      await _provider.update(user.copyWith(name: User.random().name));
+      await _provider.update(user.user.value.copyWith(name: User.random().name));
     }
   }
 
-  Future<void> _init() async {
-    _subscription = _provider.watch().listen((e) {
+  Future<RxUser> getRxUser(UserId id) async {
+    if (users.containsKey(id)) {
+      return users[id]!;
+    } else {
+      users[id] = RxUser(await _provider.user(id));
+      watch(id);
+      return users[id]!;
+    }
+  }
+
+  void watch(UserId id) {
+    _subscriptions[id] = _provider.watchSingle(id).listen((e) {
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-          users[e.key!] = e.value!;
+          users[e.key!]?.user.value = e.value!;
           break;
         case OperationKind.removed:
           users.remove(e.key);

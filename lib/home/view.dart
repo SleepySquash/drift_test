@@ -46,7 +46,7 @@ class HomeView extends StatelessWidget {
           children: [
             ...c.users.values.map((e) {
               return ListTile(
-                title: Text(e.name.val),
+                title: Text(e.user.value.name.val),
                 subtitle: Text(e.id.val),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -101,20 +101,20 @@ class HomeView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    ...e.chat.value.members.map(
+                    ...e.members.map(
                       (e) => Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(e.user.id.val),
+                            child: Text(e.user.value.id.val),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(e.user.name.val),
+                            child: Text(e.user.value.name.val),
                           ),
                           IconButton(
-                            onPressed: () => c.deleteMember(e.user.id),
+                            onPressed: () => c.deleteMember(e.user.value.id),
                             icon: const Icon(Icons.delete),
                           ),
                         ],

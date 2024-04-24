@@ -23,34 +23,34 @@ class ChatMemberDriftProvider {
 
   final UserDriftProvider _userProvider;
 
+  Future<User> Function(UserId)? getUser;
+
   $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
 
   $DtoUsersTable get dtoUsers => _database.dtoUsers;
 
   Future<List<ChatMember>> members(ChatId id, {int? limit}) async {
-    final query = (_database.select(dtoChatMembers)
-          ..where((m) => m.chatId.equals(id.val)))
-        .join([
-      innerJoin(dtoUsers, dtoUsers.id.equalsExp(dtoChatMembers.userId)),
-    ]);
+    final query = _database.select(dtoChatMembers)
+      ..where((m) => m.chatId.equals(id.val));
 
     if (limit != null) {
       query.limit(limit);
     }
 
-    return (await query.get())
-        .map((e) {
-          final userDto = e.readTableOrNull(dtoUsers);
+    final List<DtoChatMember> dtoMembers = await query.get();
+    List<ChatMember> members = [];
 
-          if (userDto != null) {
-            return ChatMemberDb.fromDb(
-              e.readTable(dtoChatMembers),
-              UserDb.fromDb(userDto),
-            );
-          }
-        })
-        .whereNotNull()
-        .toList();
+
+    for (var e in dtoMembers) {
+      final User? user = await getUser?.call(UserId(e.userId));
+
+      if (user != null) {
+        final member = ChatMemberDb.fromDb(e, user);
+        members.add(member);
+      }
+    }
+
+    return members;
   }
 
   Future<void> create(ChatMember member) async {
@@ -75,28 +75,21 @@ class ChatMemberDriftProvider {
       ..where((m) => m.chatId.equals(id.val));
 
     return query
-        .join(
-          [innerJoin(dtoUsers, dtoUsers.id.equalsExp(dtoChatMembers.userId))],
-        )
         .watch()
-        .map((rows) {
-          Map<UserId, ChatMember> members = {};
+        .asyncMap((rows) async {
+      Map<UserId, ChatMember> members = {};
 
-          for (var e in rows) {
-            final userDto = e.readTableOrNull(dtoUsers);
+      for (var e in rows) {
+        final User? user = await getUser?.call(UserId(e.userId));
 
-            if (userDto != null) {
-              final member = ChatMemberDb.fromDb(
-                e.readTable(dtoChatMembers),
-                UserDb.fromDb(userDto),
-              );
-              members[member.user.id] = member;
-            }
-          }
+        if (user != null) {
+          final member = ChatMemberDb.fromDb(e, user);
+          members[member.user.id] = member;
+        }
+      }
 
-          return members;
-        })
-        .changes();
+      return members;
+    }).changes();
   }
 }
 

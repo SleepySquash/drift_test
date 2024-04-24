@@ -23,10 +23,14 @@ void main() async {
       Get.put(ChatMemberDriftProvider(database, userProvider));
   final chatProvider = Get.put(ChatDriftProvider(database, chatMemberProvider));
 
-  Get.put<AbstractUserRepository>(UserRepository(userProvider));
-  Get.put<AbstractChatRepository>(
-    ChatRepository(chatProvider, chatMemberProvider),
+  final userRepository = UserRepository(userProvider);
+  Get.put<AbstractUserRepository>(userRepository);
+  final chatRepository = Get.put<AbstractChatRepository>(
+    ChatRepository(userRepository, chatProvider, chatMemberProvider),
   );
+
+  chatMemberProvider.getUser = userRepository.getUser;
+  chatProvider.getMembers = chatRepository.getMembers;
 
   runApp(const MyApp());
 }

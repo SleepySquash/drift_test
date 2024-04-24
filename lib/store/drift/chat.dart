@@ -6,6 +6,8 @@ import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/provider/drift/chat.dart';
 import 'package:drift_test/provider/drift/chat_member.dart';
 import 'package:drift_test/store/drift/chat_rx.dart';
+import 'package:drift_test/store/drift/user.dart';
+import 'package:drift_test/store/drift/user_rx.dart';
 import 'package:get/get.dart';
 
 import '/domain/repository/chat.dart';
@@ -13,7 +15,9 @@ import '/util/diff.dart';
 
 class ChatRepository extends DisposableInterface
     implements AbstractChatRepository {
-  ChatRepository(this._provider, this._membersProvider);
+  ChatRepository(this._userRepository, this._provider, this._membersProvider);
+
+  final UserRepository _userRepository;
 
   final ChatDriftProvider _provider;
 
@@ -56,6 +60,15 @@ class ChatRepository extends DisposableInterface
     await _membersProvider.delete(id);
   }
 
+  @override
+  Future<List<ChatMember>> getMembers(ChatId id) async {
+    return _membersProvider.members(id, limit: 3);
+  }
+
+  Future<RxUser> getUser(UserId id) async {
+    return _userRepository.getRxUser(id);
+  }
+
   Future<void> _init() async {
     _subscription = _provider.watch().listen((e) {
       switch (e.op) {
@@ -64,7 +77,7 @@ class ChatRepository extends DisposableInterface
           if (chats.containsKey(e.key!)) {
             chats[e.key!]!.chat.value = e.value!;
           } else {
-            chats[e.key!] = RxChat(e.value!, _provider, _membersProvider)
+            chats[e.key!] = RxChat(e.value!, this, _provider, _membersProvider)
               ..init();
           }
           break;

@@ -3,6 +3,7 @@ import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/domain/repository/chat.dart';
 import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/store/drift/chat_rx.dart';
+import 'package:drift_test/store/drift/user_rx.dart';
 import 'package:get/get.dart';
 
 enum HomeTab { users, chats }
@@ -19,7 +20,7 @@ class HomeController extends GetxController {
 
   final AbstractChatRepository _chatRepository;
 
-  RxMap<UserId, User> get users => _userRepository.users;
+  RxMap<UserId, RxUser> get users => _userRepository.users;
   RxMap<ChatId, RxChat> get chats => _chatRepository.chats;
 
   Future<void> createUser() async {

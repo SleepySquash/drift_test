@@ -21,6 +21,8 @@ class ChatDriftProvider {
 
   final ChatMemberDriftProvider _membersProvider;
 
+  Future<List<ChatMember>> Function(ChatId)? getMembers;
+
   $DtoChatsTable get dtoChats => _database.dtoChats;
 
   $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
@@ -58,10 +60,9 @@ class ChatDriftProvider {
           if ((event.op == OperationKind.added ||
                   event.op == OperationKind.updated) &&
               event.value != null) {
-            final members =
-                await _membersProvider.members(event.value!.id, limit: 3);
+            final members = await getMembers?.call(event.value!.id);
 
-            event.value!.members.addAll(members);
+            event.value!.members.addAll(members ?? []);
           }
 
           return event;

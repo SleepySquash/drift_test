@@ -60,6 +60,13 @@ class UserDriftProvider {
         .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
         .changes();
   }
+
+  Stream<MapChangeNotification<UserId, User>> watchSingle(UserId id) {
+    return (_database.select(dtoUsers)..where((u) => u.id.equals(id.val)))
+        .watch()
+        .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
+        .changes();
+  }
 }
 
 extension UserDb on User {
