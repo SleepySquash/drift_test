@@ -3,78 +3,165 @@ import 'dart:async';
 import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/provider/drift/user.dart';
 import 'package:drift_test/store/drift/user_rx.dart';
+import 'package:drift_test/util/diff.dart';
 import 'package:get/get.dart';
+import 'package:log_me/log_me.dart';
+import 'package:mutex/mutex.dart';
 
 import '/domain/repository/user.dart';
-import '/util/diff.dart';
 
 class UserRepository extends DisposableInterface
     implements AbstractUserRepository {
-  UserRepository(this._provider);
+  UserRepository(this.drift);
 
-  final UserDriftProvider _provider;
+  // TODO: Pagination.
+  @override
+  final RxMap<UserId, RxUserImpl> users = RxMap();
+
+  final UserDriftProvider drift;
+
+  StreamSubscription? _subscription;
+
+  final Map<UserId, Mutex> _guards = {};
 
   @override
-  final RxMap<UserId, RxUser> users = RxMap();
+  void onInit() {
+    Log.debug('onInit()', '$runtimeType');
 
-  final Map<UserId, StreamSubscription> _subscriptions = {};
+    _fetch();
+    super.onInit();
+  }
 
   @override
   void onClose() {
-    for (var e in _subscriptions.values) {
-      e.cancel();
-    }
+    Log.debug('onClose()', '$runtimeType');
+
+    _subscription?.cancel();
+
     super.onClose();
   }
 
   @override
-  Future<User> getUser(UserId id) async {
-    return (await getRxUser(id)).user.value;
+  Future<RxUser?> get(UserId id) async {
+    Log.debug('get($id)', '$runtimeType');
+
+    RxUserImpl? user = users[id];
+    if (user != null) {
+      return user;
+    }
+
+    Mutex? mutex = _guards[id];
+    if (mutex == null) {
+      mutex = Mutex();
+      _guards[id] = mutex;
+    }
+
+    return await mutex.protect(() async {
+      user = users[id];
+
+      if (user == null) {
+        final User? local = await drift.user(id);
+
+        if (local != null) {
+          user = put(local);
+        } else {
+          // Fetch from backend here...
+        }
+      }
+
+      return user;
+    });
   }
 
   @override
-  Future<void> create(User user) async {
-    await _provider.create(user);
+  Future<RxUser> create(User user) async {
+    Log.debug('create($user)', '$runtimeType');
+
+    Mutex? mutex = _guards[user.id];
+    if (mutex == null) {
+      mutex = Mutex();
+      _guards[user.id] = mutex;
+    }
+
+    return await mutex.protect(() async {
+      final User local = await drift.create(user);
+      return put(local);
+    });
   }
 
   @override
   Future<void> delete(UserId id) async {
-    await _provider.delete(id);
+    Log.debug('delete($id)', '$runtimeType');
+    await drift.delete(id);
   }
 
   @override
-  Future<void> update(UserId id) async {
-    final RxUser? user = users[id];
+  Future<void> update(User user) async {
+    Log.debug('update($user)', '$runtimeType');
 
-    if (user != null) {
-      await _provider
-          .update(user.user.value.copyWith(name: User.random().name));
+    Mutex? mutex = _guards[user.id];
+    if (mutex == null) {
+      mutex = Mutex();
+      _guards[user.id] = mutex;
     }
+
+    return await mutex.protect(() async {
+      await drift.update(user);
+
+      RxUserImpl? rxUser = users[user.id];
+      if (rxUser == null) {
+        put(user);
+      } else {
+        rxUser.user.value = user;
+      }
+    });
   }
 
-  Future<RxUser> getRxUser(UserId id) async {
-    if (users.containsKey(id)) {
-      return users[id]!;
-    } else {
-      users[id] = RxUser(await _provider.user(id));
-      watch(id);
-      return users[id]!;
-    }
+  Stream<User?> watch(UserId id) {
+    return drift.watchSingle(id);
   }
 
-  void watch(UserId id) {
-    _subscriptions[id] = _provider.watchSingle(id).listen((e) {
+  void onUserDeleted(UserId id) async {
+    users.remove(id)?.dispose();
+  }
+
+  RxUserImpl put(User user) {
+    RxUserImpl? rxUser = users[user.id];
+    if (rxUser == null) {
+      rxUser = RxUserImpl(user, this)..init();
+      users[user.id] = rxUser;
+    }
+
+    return rxUser;
+  }
+
+  Future<void> store(User user) async {
+    Log.debug('store($user)', '$runtimeType');
+    await drift.update(user);
+  }
+
+  Future<void> _fetch() async {
+    Log.debug('_fetch()', '$runtimeType');
+
+    _subscription ??= drift.watch().listen((e) {
+      Log.debug('_provider.watch(${e.op})', '$runtimeType');
+
       switch (e.op) {
         case OperationKind.added:
         case OperationKind.updated:
-          users[e.key!]?.user.value = e.value!;
+          final RxUserImpl? rxUser = users[e.key];
+          if (rxUser == null) {
+            put(e.value!);
+          } else {
+            print('here: ${e.value}');
+            rxUser.user.value = e.value!.copyWith();
+          }
           break;
+
         case OperationKind.removed:
-          users.remove(e.key);
+          onUserDeleted(e.key!);
+          break;
       }
-      print(
-        'UserRepository [watch] e: ${e.op} ${e.key?.val}, ${e.value?.name.val}',
-      );
     });
   }
 }

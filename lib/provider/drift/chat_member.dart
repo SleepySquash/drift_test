@@ -1,19 +1,33 @@
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/domain/model/chat_member.dart';
+import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/provider/drift/chat.dart';
 import 'package:drift_test/provider/drift/user.dart';
 
 import '/domain/model/user.dart';
-import '/util/diff.dart';
 import 'drift.dart';
 
-class DtoChatMembers extends Table {
-  TextColumn get userId => text().unique()();
+@DataClassName('ChatMemberRow')
+class ChatMembers extends Table {
+  @override
+  Set<Column> get primaryKey => {userId, chatId};
 
-  TextColumn get chatId =>
-      text().references(DtoChats, #id, onDelete: KeyAction.cascade)();
+  TextColumn get userId => text().references(
+        Users,
+        #id,
+        onUpdate: KeyAction.cascade,
+        onDelete: KeyAction.cascade,
+      )();
+
+  TextColumn get chatId => text().references(
+        Chats,
+        #id,
+        onUpdate: KeyAction.cascade,
+        onDelete: KeyAction.cascade,
+      )();
+
+  DateTimeColumn get createdAt => dateTime()();
 }
 
 class ChatMemberDriftProvider {
@@ -23,87 +37,72 @@ class ChatMemberDriftProvider {
 
   final UserDriftProvider _userProvider;
 
-  Future<User> Function(UserId)? getUser;
+  Future<RxUser?> Function(UserId)? getUser;
 
-  $DtoChatMembersTable get dtoChatMembers => _database.dtoChatMembers;
+  Future<List<ChatMember>> members(
+    ChatId id, {
+    int limit = 120,
+    int offset = 0,
+  }) async {
+    final stmt = _database.select(_database.chatMembers).join([
+      innerJoin(
+        _database.users,
+        _database.users.id.equalsExp(_database.chatMembers.userId),
+      )
+    ])
+      ..where(_database.chatMembers.chatId.equals(id.val))
+      ..limit(limit, offset: offset);
 
-  $DtoUsersTable get dtoUsers => _database.dtoUsers;
+    final rows = await stmt.get();
 
-  Future<List<ChatMember>> members(ChatId id, {int? limit}) async {
-    final query = _database.select(dtoChatMembers)
-      ..where((m) => m.chatId.equals(id.val));
-
-    if (limit != null) {
-      query.limit(limit);
-    }
-
-    final List<DtoChatMember> dtoMembers = await query.get();
-    List<ChatMember> members = [];
-
-    for (var e in dtoMembers) {
-      final User? user = await getUser?.call(UserId(e.userId));
-
-      if (user != null) {
-        final member = ChatMemberDb.fromDb(e, user);
-        members.add(member);
-      }
-    }
+    final List<ChatMember> members = rows.map((row) {
+      return ChatMember(
+        joinedAt: row.readTable(_database.chatMembers).createdAt,
+        user: UserDb.fromDb(row.readTable(_database.users)),
+      );
+    }).toList();
 
     return members;
   }
 
-  Future<void> create(ChatMember member) async {
-    final int affected =
-        await _database.into(dtoChatMembers).insert(member.toDb());
-
+  Future<void> create(ChatId chatId, ChatMember member) async {
+    await _database.into(_database.chatMembers).insert(member.toDb(chatId));
     await _userProvider.create(member.user);
-
-    print('create($member): affected $affected rows');
   }
 
   Future<void> delete(UserId id) async {
-    final stmt = _database.delete(dtoChatMembers)
+    final stmt = _database.delete(_database.chatMembers)
       ..where((e) => e.userId.equals(id.val));
-    final int affected = await stmt.go();
-
-    print('delete($id): affected $affected rows');
+    await stmt.go();
   }
 
-  Stream<MapChangeNotification<UserId, ChatMember>> watch(ChatId id) {
-    var query = _database.select(dtoChatMembers)
-      ..where((m) => m.chatId.equals(id.val));
+  // Stream<MapChangeNotification<UserId, ChatMember>> watch(ChatId id) {
+  //   var query = _database.select(_database.chatMembers)
+  //     ..where((m) => m.chatId.equals(id.val));
 
-    return query
-        .watch()
-        .asyncMap((rows) async {
-      Map<UserId, ChatMember> members = {};
+  //   return query.watch().asyncMap((rows) async {
+  //     Map<UserId, ChatMember> members = {};
 
-      for (var e in rows) {
-        final User? user = await getUser?.call(UserId(e.userId));
+  //     for (var e in rows) {
+  //       final RxUser? user = await getUser?.call(UserId(e.userId));
 
-        if (user != null) {
-          final member = ChatMemberDb.fromDb(e, user);
-          members[member.user.id] = member;
-        }
-      }
+  //       if (user != null) {
+  //         final member = ChatMemberDb.fromDb(e, user.user.value);
+  //         members[member.user.id] = member;
+  //       }
+  //     }
 
-      return members;
-    }).changes();
-  }
+  //     return members;
+  //   }).changes();
+  // }
 }
 
 extension ChatMemberDb on ChatMember {
-  static ChatMember fromDb(DtoChatMember e, User user) {
-    return ChatMember(
-      user: user,
-      chatId: ChatId(e.chatId),
-    );
-  }
-
-  DtoChatMember toDb() {
-    return DtoChatMember(
+  ChatMemberRow toDb(ChatId chatId) {
+    return ChatMemberRow(
       userId: user.id.val,
       chatId: chatId.val,
+      createdAt: joinedAt,
     );
   }
 }

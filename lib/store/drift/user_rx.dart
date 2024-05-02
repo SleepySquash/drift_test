@@ -1,17 +1,32 @@
 import 'dart:async';
 
-import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/domain/model/user.dart';
-import 'package:drift_test/provider/drift/chat.dart';
-import 'package:drift_test/provider/drift/chat_member.dart';
+import 'package:drift_test/domain/repository/user.dart';
+import 'package:drift_test/store/drift/user.dart';
 import 'package:get/get.dart';
 
-import '/util/diff.dart';
+class RxUserImpl extends RxUser {
+  RxUserImpl(User user, this._repository) : user = Rx(user);
 
-class RxUser {
-  RxUser(User user) : user = Rx(user);
-
+  @override
   final Rx<User> user;
 
-  UserId get id => user.value.id;
+  final UserRepository _repository;
+
+  Future<void> init() async {}
+
+  void dispose() {}
+
+  @override
+  Future<void> updateAvatar(String url) async {
+    user.update((v) => v?..avatar = url.isEmpty ? null : Avatar(url));
+
+    await _repository.drift.txn(() async {
+      final User? stored = await _repository.drift.user(id);
+      if (stored != null) {
+        stored.avatar = url.isEmpty ? null : Avatar(url);
+        await _repository.drift.update(stored);
+      }
+    });
+  }
 }

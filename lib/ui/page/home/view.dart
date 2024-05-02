@@ -1,3 +1,7 @@
+import 'package:drift_test/domain/model/user.dart';
+import 'package:drift_test/ui/page/chat/view.dart';
+import 'package:drift_test/ui/page/user/view.dart';
+import 'package:drift_test/ui/widget/avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,23 +49,31 @@ class HomeView extends StatelessWidget {
         return ListView(
           children: [
             ...c.users.values.map((e) {
-              return ListTile(
-                title: Text(e.user.value.name.val),
-                subtitle: Text(e.id.val),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => c.updateUser(e.id),
-                      icon: const Icon(Icons.refresh),
-                    ),
-                    IconButton(
-                      onPressed: () => c.deleteUser(e.id),
-                      icon: const Icon(Icons.delete),
-                    ),
-                  ],
-                ),
-              );
+              return Obx(() {
+                final User user = e.user.value;
+
+                return ListTile(
+                  title: Text(user.title),
+                  subtitle: Text('${user.createdAt}'),
+                  leading: SizedBox.square(
+                    dimension: 36,
+                    child: AvatarWidget(user.avatar),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () => c.deleteUser(e.id),
+                        icon: const Icon(Icons.delete),
+                      ),
+                    ],
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => UserView(e.id)),
+                  ),
+                );
+              });
             }),
           ],
         );
@@ -86,35 +98,16 @@ class HomeView extends StatelessWidget {
                   children: [
                     ListTile(
                       title: Text(e.chat.value.name.val),
-                      subtitle: Text(e.id.val),
+                      subtitle: Text('${e.chat.value.createdAt}'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ChatView(e.id)),
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: () => c.addMember(e.id),
-                            icon: const Icon(Icons.add),
-                          ),
-                          IconButton(
                             onPressed: () => c.deleteChat(e.id),
-                            icon: const Icon(Icons.delete),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ...e.members.map(
-                      (e) => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(e.user.value.id.val),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Text(e.user.value.name.val),
-                          ),
-                          IconButton(
-                            onPressed: () => c.deleteMember(e.user.value.id),
                             icon: const Icon(Icons.delete),
                           ),
                         ],

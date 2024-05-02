@@ -7,5 +7,3 @@ QueryExecutor connect() {
 Future<void> validateDatabaseSchema(GeneratedDatabase database) async {
   throw UnsupportedError('`drift` isn\'t supported on this platform.');
 }
-
-Future<void> initDatabase() async {}

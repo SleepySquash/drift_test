@@ -5,32 +5,32 @@ import 'package:drift_test/provider/drift/user.dart';
 import 'package:drift_test/store/drift/user.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:log_me/log_me.dart';
 
 import 'domain/repository/chat.dart';
-import 'home/view.dart';
+import 'ui/page/home/view.dart';
 import 'provider/drift/chat.dart';
-import 'provider/drift/connection/connection.dart';
 import 'store/drift/chat.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initDatabase();
+  Log.options = const LogOptions(level: LogLevel.all);
+
   final database = Get.put(DriftProvider());
 
   final userProvider = Get.put(UserDriftProvider(database));
   final chatMemberProvider =
       Get.put(ChatMemberDriftProvider(database, userProvider));
-  final chatProvider = Get.put(ChatDriftProvider(database, chatMemberProvider));
+  final chatProvider = Get.put(ChatDriftProvider(database));
 
   final userRepository = UserRepository(userProvider);
   Get.put<AbstractUserRepository>(userRepository);
-  final chatRepository = Get.put<AbstractChatRepository>(
+  Get.put<AbstractChatRepository>(
     ChatRepository(userRepository, chatProvider, chatMemberProvider),
   );
 
-  chatMemberProvider.getUser = userRepository.getUser;
-  chatProvider.getMembers = chatRepository.getMembers;
+  chatMemberProvider.getUser = userRepository.get;
 
   runApp(const MyApp());
 }

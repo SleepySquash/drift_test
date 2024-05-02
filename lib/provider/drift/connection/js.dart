@@ -16,5 +16,3 @@ QueryExecutor connect() {
 }
 
 Future<void> validateDatabaseSchema(GeneratedDatabase database) async {}
-
-Future<void> initDatabase() async {}

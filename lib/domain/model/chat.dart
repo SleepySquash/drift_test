@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:drift_test/domain/model/chat_member.dart';
 import 'package:uuid/uuid.dart';
 
 class Chat {
@@ -7,7 +6,6 @@ class Chat {
     required this.id,
     required this.name,
     required this.createdAt,
-    required this.members,
   });
 
   factory Chat.random() {
@@ -18,14 +16,12 @@ class Chat {
         'qwertyuiopasdfghjklzxcvbnm'.toUpperCase().split('').sample(1).first,
       ),
       createdAt: DateTime.now(),
-      members: List.generate(5, (_) => ChatMember.random(id)),
     );
   }
 
   final ChatId id;
   final ChatName name;
   final DateTime createdAt;
-  final List<ChatMember> members;
 
   @override
   int get hashCode => Object.hash(id, name, createdAt);

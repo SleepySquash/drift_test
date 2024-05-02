@@ -1,24 +1,23 @@
-import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/domain/model/user.dart';
 
 class ChatMember {
   const ChatMember({
     required this.user,
-    required this.chatId,
+    required this.joinedAt,
   });
 
-  factory ChatMember.random(ChatId id) => ChatMember(
+  factory ChatMember.random() => ChatMember(
         user: User.random(),
-        chatId: id,
+        joinedAt: DateTime.now(),
       );
 
   final User user;
-  final ChatId chatId;
+  final DateTime joinedAt;
 
   @override
-  int get hashCode => Object.hash(user, chatId);
+  int get hashCode => Object.hash(user, joinedAt);
 
   @override
   bool operator ==(Object other) =>
-      other is ChatMember && user == other.user && chatId == other.chatId;
+      other is ChatMember && user == other.user && joinedAt == other.joinedAt;
 }
