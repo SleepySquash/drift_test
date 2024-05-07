@@ -1,6 +1,10 @@
 import 'package:collection/collection.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+part 'user.g.dart';
+
+@JsonSerializable()
 class User {
   User({
     required this.id,
@@ -10,6 +14,7 @@ class User {
     required this.createdAt,
   });
 
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   factory User.random() => User(
         id: UserId(const Uuid().v4()),
         num: UserNum(
@@ -60,10 +65,15 @@ class User {
   @override
   String toString() =>
       'User(id: $id, num: $num, name: $name, avatar: $avatar, createdAt: $createdAt)';
+
+  Map<String, dynamic> toJson() => _$UserToJson(this);
 }
 
+@JsonSerializable()
 class UserId {
   const UserId(this.val);
+  factory UserId.fromJson(Map<String, dynamic> json) => _$UserIdFromJson(json);
+
   final String val;
 
   @override
@@ -74,10 +84,16 @@ class UserId {
 
   @override
   String toString() => val;
+
+  Map<String, dynamic> toJson() => _$UserIdToJson(this);
 }
 
+@JsonSerializable()
 class UserNum {
   const UserNum(this.val);
+  factory UserNum.fromJson(Map<String, dynamic> json) =>
+      _$UserNumFromJson(json);
+
   final String val;
 
   @override
@@ -88,10 +104,16 @@ class UserNum {
 
   @override
   String toString() => val;
+
+  Map<String, dynamic> toJson() => _$UserNumToJson(this);
 }
 
+@JsonSerializable()
 class UserName {
   const UserName(this.val);
+  factory UserName.fromJson(Map<String, dynamic> json) =>
+      _$UserNameFromJson(json);
+
   final String val;
 
   @override
@@ -102,14 +124,14 @@ class UserName {
 
   @override
   String toString() => val;
+
+  Map<String, dynamic> toJson() => _$UserNameToJson(this);
 }
 
+@JsonSerializable()
 class Avatar {
   const Avatar(this.url);
-
-  factory Avatar.fromJson(Map<String, dynamic> json) {
-    return Avatar(json['url']);
-  }
+  factory Avatar.fromJson(Map<String, dynamic> json) => _$AvatarFromJson(json);
 
   final String url;
 
@@ -119,10 +141,8 @@ class Avatar {
   @override
   bool operator ==(Object other) => other is Avatar && url == other.url;
 
-  Map<String, dynamic> toJson() {
-    return {'url': url};
-  }
-
   @override
   String toString() => url;
+
+  Map<String, dynamic> toJson() => _$AvatarToJson(this);
 }

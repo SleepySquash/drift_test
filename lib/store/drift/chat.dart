@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:drift_test/domain/model/chat.dart';
+import 'package:drift_test/domain/model/chat_item.dart';
+import 'package:drift_test/domain/model/chat_message.dart';
 import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/provider/drift/chat.dart';
+import 'package:drift_test/provider/drift/chat_item.dart';
 import 'package:drift_test/provider/drift/chat_member.dart';
 import 'package:drift_test/store/drift/chat_rx.dart';
 import 'package:drift_test/store/drift/user.dart';
+import 'package:drift_test/util/diff.dart';
 import 'package:get/get.dart';
 import 'package:log_me/log_me.dart';
 import 'package:mutex/mutex.dart';
@@ -15,16 +19,21 @@ import '/domain/repository/chat.dart';
 
 class ChatRepository extends DisposableInterface
     implements AbstractChatRepository {
-  ChatRepository(this._userRepository, this._provider, this._membersProvider);
+  ChatRepository(
+    this._userRepository,
+    this.chatDrift,
+    this.membersDrift,
+    this.itemDrift,
+  );
 
   @override
   final RxMap<ChatId, RxChatImpl> chats = RxMap();
 
+  final ChatDriftProvider chatDrift;
+  final ChatMemberDriftProvider membersDrift;
+  final ChatItemDriftProvider itemDrift;
+
   final UserRepository _userRepository;
-
-  final ChatDriftProvider _provider;
-
-  final ChatMemberDriftProvider _membersProvider;
 
   StreamSubscription? _subscription;
 
@@ -32,7 +41,26 @@ class ChatRepository extends DisposableInterface
 
   @override
   void onInit() {
-    _init();
+    _subscription ??= chatDrift.watch().listen((e) {
+      Log.debug('_provider.watch(${e.op})', '$runtimeType');
+
+      switch (e.op) {
+        case OperationKind.added:
+        case OperationKind.updated:
+          final RxChatImpl? rxChat = chats[e.key];
+          if (rxChat == null) {
+            put(e.value!);
+          } else {
+            rxChat.chat.value = e.value!;
+          }
+          break;
+
+        case OperationKind.removed:
+          onChatDeleted(e.key!);
+          break;
+      }
+    });
+
     super.onInit();
   }
 
@@ -61,11 +89,10 @@ class ChatRepository extends DisposableInterface
       chat = chats[id];
 
       if (chat == null) {
-        final Chat? local = await _provider.chat(id);
+        final Chat? local = await chatDrift.chat(id);
 
         if (local != null) {
-          return chats[id] =
-              RxChatImpl(local, this, _provider, _membersProvider)..init();
+          return chats[id] = RxChatImpl(local, this)..init();
         }
 
         // Fetch from backend here....
@@ -77,36 +104,39 @@ class ChatRepository extends DisposableInterface
 
   @override
   Future<void> create(Chat chat) async {
-    await _provider.create(chat);
+    await chatDrift.create(chat);
   }
 
   @override
   Future<void> delete(ChatId id) async {
-    await _provider.delete(id);
+    await chatDrift.delete(id);
+  }
+
+  @override
+  Future<void> postMessage(ChatMessage message) async {
+    await itemDrift.create(message);
+  }
+
+  @override
+  Future<void> deleteItem(ChatItemId itemId) async {
+    await itemDrift.delete(itemId);
   }
 
   Future<RxUser?> getUser(UserId id) async {
     return _userRepository.get(id);
   }
 
-  Future<void> _init() async {
-    // _subscription = _provider.watch().listen((e) {
-    //   switch (e.op) {
-    //     case OperationKind.added:
-    //     case OperationKind.updated:
-    //       if (chats.containsKey(e.key!)) {
-    //         chats[e.key!]!.chat.value = e.value!;
-    //       } else {
-    //         chats[e.key!] =
-    //             RxChatImpl(e.value!, this, _provider, _membersProvider)..init();
-    //       }
-    //       break;
+  void onChatDeleted(ChatId id) async {
+    chats.remove(id)?.dispose();
+  }
 
-    //     case OperationKind.removed:
-    //       chats.remove(e.key);
-    //   }
+  RxChatImpl put(Chat chat) {
+    RxChatImpl? rxChat = chats[chat.id];
+    if (rxChat == null) {
+      rxChat = RxChatImpl(chat, this)..init();
+      chats[chat.id] = rxChat;
+    }
 
-    //   print('ChatRepository [watch] e: ${e.op} ${e.key?.val}');
-    // });
+    return rxChat;
   }
 }

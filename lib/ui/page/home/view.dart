@@ -13,13 +13,14 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
-      init: HomeController(Get.find(), Get.find()),
+      init: HomeController(Get.find(), Get.find(), Get.find()),
       builder: (HomeController c) {
         return Obx(() {
           return Scaffold(
             body: [
               _users(context, c),
               _chats(context, c),
+              _me(context, c),
             ].elementAt(c.tab.value.index),
             bottomNavigationBar: BottomNavigationBar(
               items: HomeTab.values.map((e) {
@@ -29,6 +30,10 @@ class HomeView extends StatelessWidget {
                       label: e.name,
                     ),
                   HomeTab.users => BottomNavigationBarItem(
+                      icon: const Icon(Icons.people),
+                      label: e.name,
+                    ),
+                  HomeTab.me => BottomNavigationBarItem(
                       icon: const Icon(Icons.person),
                       label: e.name,
                     ),
@@ -99,9 +104,9 @@ class HomeView extends StatelessWidget {
                     ListTile(
                       title: Text(e.chat.value.name.val),
                       subtitle: Text('${e.chat.value.createdAt}'),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => ChatView(e.id)),
+                      leading: SizedBox.square(
+                        dimension: 36,
+                        child: AvatarWidget(e.chat.value.avatar),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -111,6 +116,10 @@ class HomeView extends StatelessWidget {
                             icon: const Icon(Icons.delete),
                           ),
                         ],
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => ChatView(e.id)),
                       ),
                     ),
                   ],
@@ -124,6 +133,23 @@ class HomeView extends StatelessWidget {
         onPressed: c.createChat,
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _me(BuildContext context, HomeController c) {
+    return Scaffold(
+      body: Obx(() {
+        if (c.me.value == null) {
+          return Center(
+            child: ElevatedButton(
+              onPressed: c.authorize,
+              child: const Text('Authorize'),
+            ),
+          );
+        }
+
+        return Center(child: Text('${c.me.value}'));
+      }),
     );
   }
 }

@@ -28,7 +28,26 @@ class UserRepository extends DisposableInterface
   void onInit() {
     Log.debug('onInit()', '$runtimeType');
 
-    _fetch();
+    _subscription ??= drift.watch().listen((e) {
+      Log.debug('_provider.watch(${e.op})', '$runtimeType');
+
+      switch (e.op) {
+        case OperationKind.added:
+        case OperationKind.updated:
+          final RxUserImpl? rxUser = users[e.key];
+          if (rxUser == null) {
+            put(e.value!);
+          } else {
+            rxUser.user.value = e.value!;
+          }
+          break;
+
+        case OperationKind.removed:
+          onUserDeleted(e.key!);
+          break;
+      }
+    });
+
     super.onInit();
   }
 
@@ -117,10 +136,6 @@ class UserRepository extends DisposableInterface
     });
   }
 
-  Stream<User?> watch(UserId id) {
-    return drift.watchSingle(id);
-  }
-
   void onUserDeleted(UserId id) async {
     users.remove(id)?.dispose();
   }
@@ -133,35 +148,5 @@ class UserRepository extends DisposableInterface
     }
 
     return rxUser;
-  }
-
-  Future<void> store(User user) async {
-    Log.debug('store($user)', '$runtimeType');
-    await drift.update(user);
-  }
-
-  Future<void> _fetch() async {
-    Log.debug('_fetch()', '$runtimeType');
-
-    _subscription ??= drift.watch().listen((e) {
-      Log.debug('_provider.watch(${e.op})', '$runtimeType');
-
-      switch (e.op) {
-        case OperationKind.added:
-        case OperationKind.updated:
-          final RxUserImpl? rxUser = users[e.key];
-          if (rxUser == null) {
-            put(e.value!);
-          } else {
-            print('here: ${e.value}');
-            rxUser.user.value = e.value!.copyWith();
-          }
-          break;
-
-        case OperationKind.removed:
-          onUserDeleted(e.key!);
-          break;
-      }
-    });
   }
 }

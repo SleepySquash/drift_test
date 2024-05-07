@@ -12,6 +12,20 @@ class PaginatedImpl<T> extends Paginated<T> {
     this.perPage = 15,
   });
 
+  // We need a way to retrieve `OFFSET` of `before`/`after` item.
+  // Why? Because page providers may be really different. E.g. GraphQL provider
+  // will use the cursors of [T] items to fetch before/after pages. And `drift`
+  // provider should be able to do so by using LIMIT and OFFSET keywords of SQL.
+  // => from the [T] item it should be able to get the required position and use
+  // it to get N items before or after?
+  //
+  // `rowid` doesn't allow us to do so, as it must account the `ORDER BY`
+  // statement.
+  //
+  // Perhaps we may create temporary table and COUNT the items until the ID?
+  // Or query the whole SELECT at all?
+  //
+  // Hm. We can simply use `WHERE updated_at < ... LIMIT 15` and this does it?
   final Future<List<T>> Function({
     T? before,
     T? after,

@@ -7,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:log_me/log_me.dart';
 
+import 'domain/repository/auth.dart';
 import 'domain/repository/chat.dart';
+import 'provider/drift/account.dart';
+import 'provider/drift/chat_item.dart';
+import 'store/drift/auth.dart';
 import 'ui/page/home/view.dart';
 import 'provider/drift/chat.dart';
 import 'store/drift/chat.dart';
@@ -19,15 +23,25 @@ void main() async {
 
   final database = Get.put(DriftProvider());
 
+  final accountProvider = Get.put(AccountDriftProvider(database));
+
   final userProvider = Get.put(UserDriftProvider(database));
-  final chatMemberProvider =
-      Get.put(ChatMemberDriftProvider(database, userProvider));
+  final chatMemberProvider = Get.put(ChatMemberDriftProvider(database));
+  final chatItemProvider = Get.put(ChatItemDriftProvider(database));
   final chatProvider = Get.put(ChatDriftProvider(database));
+
+  final authRepository = AuthRepository(accountProvider);
+  await Get.put<AbstractAuthRepository>(authRepository).init();
 
   final userRepository = UserRepository(userProvider);
   Get.put<AbstractUserRepository>(userRepository);
   Get.put<AbstractChatRepository>(
-    ChatRepository(userRepository, chatProvider, chatMemberProvider),
+    ChatRepository(
+      userRepository,
+      chatProvider,
+      chatMemberProvider,
+      chatItemProvider,
+    ),
   );
 
   chatMemberProvider.getUser = userRepository.get;

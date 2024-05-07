@@ -33,16 +33,12 @@ class Users extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-class UserDriftProvider {
-  UserDriftProvider(this._database);
-
-  final DriftProvider _database;
+class UserDriftProvider extends DriftProviderBase {
+  UserDriftProvider(super.database);
 
   Future<List<User>> users({int? limit, int? offset}) async {
-    final stmt = _database.select(_database.users);
-    stmt.orderBy([
-      (u) => OrderingTerm(expression: u.createdAt, mode: OrderingMode.desc),
-    ]);
+    final stmt = db.select(db.users);
+    stmt.orderBy([(u) => OrderingTerm.desc(u.createdAt)]);
 
     if (limit != null) {
       stmt.limit(limit, offset: offset);
@@ -53,8 +49,7 @@ class UserDriftProvider {
   }
 
   Future<User?> user(UserId id) async {
-    final dto = await (_database.select(_database.users)
-          ..where((u) => u.id.equals(id.val)))
+    final dto = await (db.select(db.users)..where((u) => u.id.equals(id.val)))
         .getSingleOrNull();
 
     if (dto == null) {
@@ -65,27 +60,23 @@ class UserDriftProvider {
   }
 
   Future<User> create(User user) async {
-    return UserDb.fromDb(
-      await _database.into(_database.users).insertReturning(user.toDb()),
-    );
+    return UserDb.fromDb(await db.into(db.users).insertReturning(user.toDb()));
   }
 
   Future<void> update(User user) async {
-    final stmt = _database.update(_database.users);
+    final stmt = db.update(db.users);
     await stmt.replace(user.toDb());
   }
 
   Future<void> delete(UserId id) async {
-    final stmt = _database.delete(_database.users);
+    final stmt = db.delete(db.users);
     stmt.where((e) => e.id.equals(id.val));
     await stmt.go();
   }
 
   Stream<MapChangeNotification<UserId, User>> watch() {
-    final stmt = _database.select(_database.users);
-    stmt.orderBy([
-      (u) => OrderingTerm(expression: u.createdAt, mode: OrderingMode.desc),
-    ]);
+    final stmt = db.select(db.users);
+    stmt.orderBy([(u) => OrderingTerm.desc(u.createdAt)]);
 
     return stmt
         .watch()
@@ -94,8 +85,7 @@ class UserDriftProvider {
   }
 
   Stream<User?> watchSingle(UserId id) {
-    final stmt = _database.select(_database.users)
-      ..where((u) => u.id.equals(id.val));
+    final stmt = db.select(db.users)..where((u) => u.id.equals(id.val));
 
     return stmt.watch().map((e) {
       if (e.isEmpty) {
@@ -104,10 +94,6 @@ class UserDriftProvider {
 
       return UserDb.fromDb(e.first);
     });
-  }
-
-  Future<void> txn<T>(Future<T> Function() action) async {
-    await _database.transaction(action);
   }
 }
 

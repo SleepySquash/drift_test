@@ -4,6 +4,7 @@ import 'package:drift_test/domain/model/chat_member.dart';
 import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/provider/drift/chat.dart';
 import 'package:drift_test/provider/drift/user.dart';
+import 'package:drift_test/util/diff.dart';
 
 import '/domain/model/user.dart';
 import 'drift.dart';
@@ -31,11 +32,9 @@ class ChatMembers extends Table {
 }
 
 class ChatMemberDriftProvider {
-  ChatMemberDriftProvider(this._database, this._userProvider);
+  ChatMemberDriftProvider(this._database);
 
   final DriftProvider _database;
-
-  final UserDriftProvider _userProvider;
 
   Future<RxUser?> Function(UserId)? getUser;
 
@@ -67,7 +66,6 @@ class ChatMemberDriftProvider {
 
   Future<void> create(ChatId chatId, ChatMember member) async {
     await _database.into(_database.chatMembers).insert(member.toDb(chatId));
-    await _userProvider.create(member.user);
   }
 
   Future<void> delete(UserId id) async {
@@ -76,25 +74,32 @@ class ChatMemberDriftProvider {
     await stmt.go();
   }
 
-  // Stream<MapChangeNotification<UserId, ChatMember>> watch(ChatId id) {
-  //   var query = _database.select(_database.chatMembers)
-  //     ..where((m) => m.chatId.equals(id.val));
+  Stream<MapChangeNotification<UserId, ChatMember>> watch(
+    ChatId id, {
+    int limit = 120,
+    int offset = 0,
+  }) {
+    final stmt = _database.select(_database.chatMembers).join([
+      innerJoin(
+        _database.users,
+        _database.users.id.equalsExp(_database.chatMembers.userId),
+      )
+    ])
+      ..where(_database.chatMembers.chatId.equals(id.val))
+      ..limit(limit, offset: offset);
 
-  //   return query.watch().asyncMap((rows) async {
-  //     Map<UserId, ChatMember> members = {};
-
-  //     for (var e in rows) {
-  //       final RxUser? user = await getUser?.call(UserId(e.userId));
-
-  //       if (user != null) {
-  //         final member = ChatMemberDb.fromDb(e, user.user.value);
-  //         members[member.user.id] = member;
-  //       }
-  //     }
-
-  //     return members;
-  //   }).changes();
-  // }
+    return stmt.watch().map((rows) {
+      return {
+        for (var e in rows.map((e) {
+          return ChatMember(
+            joinedAt: e.readTable(_database.chatMembers).createdAt,
+            user: UserDb.fromDb(e.readTable(_database.users)),
+          );
+        }))
+          e.user.id: e
+      };
+    }).changes();
+  }
 }
 
 extension ChatMemberDb on ChatMember {

@@ -3,3 +3,9 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - "**/*.g.dart"
+
+linter:
+  # List of all available lints can be found here:
+  # https://dart-lang.github.io/linter/lints/index.html
+  rules:
+    prefer_single_quotes: true
