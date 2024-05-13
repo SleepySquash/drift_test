@@ -47,14 +47,39 @@ class ChatItems extends Table {
   TextColumn get data => text()();
 }
 
+@DataClassName('ChatItemViewRow')
+class ChatItemViews extends Table {
+  @override
+  Set<Column> get primaryKey => {chatId, chatItemId, at};
+
+  TextColumn get chatId => text().references(Chats, #id)();
+  TextColumn get chatItemId => text().references(ChatItems, #id)();
+  DateTimeColumn get at => dateTime()();
+}
+
 class ChatItemDriftProvider {
   ChatItemDriftProvider(this._database);
 
   final DriftProvider _database;
 
-  Future<List<ChatItem>> items(ChatId chatId, {int? limit, int? offset}) async {
+  Future<List<ChatItem>> items(
+    ChatId chatId, {
+    int? limit,
+    int? offset,
+    DateTime? biggerThan,
+    DateTime? lessThan,
+  }) async {
     final stmt = _database.select(_database.chatItems);
     stmt.where((u) => u.chatId.equals(chatId.val));
+
+    if (biggerThan != null) {
+      stmt.where((u) => u.at.isBiggerThanValue(biggerThan));
+    }
+
+    if (lessThan != null) {
+      stmt.where((u) => u.at.isSmallerThanValue(lessThan));
+    }
+
     stmt.orderBy([(u) => OrderingTerm.desc(u.at)]);
 
     if (limit != null) {
@@ -81,18 +106,35 @@ class ChatItemDriftProvider {
     await stmt.go();
   }
 
-  Stream<MapChangeNotification<ChatItemId, ChatItem>> watch(
+  Future<void> clear() async {
+    await _database.delete(_database.chatItems).go();
+  }
+
+  Stream<List<MapChangeNotification<ChatItemId, ChatItem>>> watch(
     ChatId chatId, {
     int? limit,
     int? offset,
+    DateTime? biggerThan,
+    DateTime? lessThan,
   }) {
     final stmt = _database.select(_database.chatItems);
     stmt.where((u) => u.chatId.equals(chatId.val));
+
+    if (biggerThan != null) {
+      stmt.where((u) => u.at.isBiggerThanValue(biggerThan));
+    }
+
+    if (lessThan != null) {
+      stmt.where((u) => u.at.isSmallerThanValue(lessThan));
+    }
+
     stmt.orderBy([(u) => OrderingTerm.desc(u.at)]);
 
     if (limit != null) {
       stmt.limit(limit, offset: offset);
     }
+
+    print('[built] ${stmt.constructQuery().buffer.toString()}');
 
     return stmt
         .watch()

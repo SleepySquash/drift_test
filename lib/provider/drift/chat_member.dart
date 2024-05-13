@@ -40,17 +40,30 @@ class ChatMemberDriftProvider {
 
   Future<List<ChatMember>> members(
     ChatId id, {
-    int limit = 120,
-    int offset = 0,
+    int? limit,
+    int? offset,
+    DateTime? biggerThan,
+    DateTime? lessThan,
   }) async {
     final stmt = _database.select(_database.chatMembers).join([
       innerJoin(
         _database.users,
         _database.users.id.equalsExp(_database.chatMembers.userId),
       )
-    ])
-      ..where(_database.chatMembers.chatId.equals(id.val))
-      ..limit(limit, offset: offset);
+    ]);
+    stmt.where(_database.chatMembers.chatId.equals(id.val));
+
+    if (biggerThan != null) {
+      stmt.where(_database.chatMembers.createdAt.isBiggerThanValue(biggerThan));
+    }
+
+    if (lessThan != null) {
+      stmt.where(_database.chatMembers.createdAt.isSmallerThanValue(lessThan));
+    }
+
+    if (limit != null) {
+      stmt.limit(limit, offset: offset);
+    }
 
     final rows = await stmt.get();
 
@@ -74,6 +87,10 @@ class ChatMemberDriftProvider {
     await stmt.go();
   }
 
+  Future<void> clear() async {
+    await _database.delete(_database.chatMembers).go();
+  }
+
   Stream<MapChangeNotification<UserId, ChatMember>> watch(
     ChatId id, {
     int limit = 120,
@@ -84,21 +101,23 @@ class ChatMemberDriftProvider {
         _database.users,
         _database.users.id.equalsExp(_database.chatMembers.userId),
       )
-    ])
-      ..where(_database.chatMembers.chatId.equals(id.val))
-      ..limit(limit, offset: offset);
+    ]);
+    stmt.where(_database.chatMembers.chatId.equals(id.val));
+    stmt.limit(limit, offset: offset);
 
-    return stmt.watch().map((rows) {
-      return {
-        for (var e in rows.map((e) {
-          return ChatMember(
-            joinedAt: e.readTable(_database.chatMembers).createdAt,
-            user: UserDb.fromDb(e.readTable(_database.users)),
-          );
-        }))
-          e.user.id: e
-      };
-    }).changes();
+    return const Stream.empty();
+
+    // return stmt.watch().map((rows) {
+    //   return {
+    //     for (var e in rows.map((e) {
+    //       return ChatMember(
+    //         joinedAt: e.readTable(_database.chatMembers).createdAt,
+    //         user: UserDb.fromDb(e.readTable(_database.users)),
+    //       );
+    //     }))
+    //       e.user.id: e
+    //   };
+    // }).changes();
   }
 }
 

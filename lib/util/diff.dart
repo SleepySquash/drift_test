@@ -1,20 +1,24 @@
 /// Extension adding an ability to get [MapChangeNotification]s from [Stream].
 extension MapChangesExtension<K, T> on Stream<Map<K, T>> {
   /// Gets [MapChangeNotification]s from [Stream].
-  Stream<MapChangeNotification<K, T>> changes() {
+  Stream<List<MapChangeNotification<K, T>>> changes() {
     Map<K, T> last = {};
 
     return asyncExpand((e) async* {
+      final List<MapChangeNotification<K, T>> changed = [];
+
       for (final MapEntry<K, T> entry in e.entries) {
         final T? item = last[entry.key];
         if (item == null) {
-          yield MapChangeNotification.added(entry.key, entry.value);
+          changed.add(MapChangeNotification.added(entry.key, entry.value));
         } else {
           if (entry.value != item) {
-            yield MapChangeNotification.updated(
-              entry.key,
-              entry.key,
-              entry.value,
+            changed.add(
+              MapChangeNotification.updated(
+                entry.key,
+                entry.key,
+                entry.value,
+              ),
             );
           }
         }
@@ -23,11 +27,13 @@ extension MapChangesExtension<K, T> on Stream<Map<K, T>> {
       for (final MapEntry<K, T> entry in last.entries) {
         final T? item = e[entry.key];
         if (item == null) {
-          yield MapChangeNotification.removed(entry.key, entry.value);
+          changed.add(MapChangeNotification.removed(entry.key, entry.value));
         }
       }
 
       last = e;
+
+      yield changed;
     });
   }
 }
@@ -66,3 +72,30 @@ class MapChangeNotification<K, V> {
 
 /// Possible operation kinds changing an iterable.
 enum OperationKind { added, removed, updated }
+
+/// Change in an [ObsList].
+class ListChangeNotification<E> {
+  /// Returns notification with [op] operation.
+  ListChangeNotification(this.element, this.op, this.pos);
+
+  /// Returns notification with [OperationKind.added] operation.
+  ListChangeNotification.added(this.element, this.pos)
+      : op = OperationKind.added;
+
+  /// Returns notification with [OperationKind.updated] operation.
+  ListChangeNotification.updated(this.element, this.pos)
+      : op = OperationKind.updated;
+
+  /// Returns notification with [OperationKind.removed] operation.
+  ListChangeNotification.removed(this.element, this.pos)
+      : op = OperationKind.removed;
+
+  /// Element being changed.
+  final E element;
+
+  /// Operation causing the [element] to change.
+  final OperationKind op;
+
+  /// Position of the changed [element].
+  final int pos;
+}

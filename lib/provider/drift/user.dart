@@ -78,10 +78,12 @@ class UserDriftProvider extends DriftProviderBase {
     final stmt = db.select(db.users);
     stmt.orderBy([(u) => OrderingTerm.desc(u.createdAt)]);
 
-    return stmt
-        .watch()
-        .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
-        .changes();
+    return const Stream.empty();
+
+    // return stmt
+    //     .watch()
+    //     .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
+    //     .changes();
   }
 
   Stream<User?> watchSingle(UserId id) {

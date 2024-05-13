@@ -20,6 +20,8 @@ class ChatController extends GetxController {
   final TextEditingController message = TextEditingController();
   final FocusNode focus = FocusNode();
 
+  final ScrollController scrollController = ScrollController();
+
   final AbstractChatRepository _chatRepository;
   final AbstractAuthRepository _authRepository;
 
@@ -55,13 +57,19 @@ class ChatController extends GetxController {
     message.clear();
   }
 
+  Future<void> deleteItem(ChatItem item) async {
+    await _chatRepository.deleteItem(item.id);
+  }
+
   Future<void> _fetchChat() async {
     status.value = RxStatus.loading();
 
     try {
       chat = await _chatRepository.get(id);
       status.value = RxStatus.loadingMore();
-      await chat?.around();
+
+      await chat?.items.around();
+
       status.value = RxStatus.success();
     } catch (e) {
       status.value = RxStatus.error(e.toString());

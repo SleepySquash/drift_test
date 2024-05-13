@@ -32,9 +32,7 @@ abstract class ChatItem {
     this.authorId,
     this.at, {
     SendingStatus? status,
-  }) : status = Rx(
-          status ?? (id.isLocal ? SendingStatus.error : SendingStatus.sent),
-        );
+  }) : status = Rx(status ?? (SendingStatus.sent));
 
   final ChatItemId id;
   final ChatId chatId;
@@ -80,34 +78,5 @@ class ChatItemId {
   @override
   String toString() => val;
 
-  bool get isLocal => val.startsWith('local.');
-
   Map<String, dynamic> toJson() => _$ChatItemIdToJson(this);
-}
-
-class _ChatItemConverter
-    implements JsonConverter<ChatItem, Map<String, dynamic>> {
-  const _ChatItemConverter();
-
-  @override
-  ChatItem fromJson(Map<String, dynamic> json) => switch (json['runtimeType']) {
-        'ChatMessage' => ChatMessage.fromJson(json),
-        'ChatCall' => ChatCall.fromJson(json),
-        'ChatInfo' => ChatInfo.fromJson(json),
-        'ChatForward' => ChatForward.fromJson(json),
-        _ => throw UnimplementedError(json['runtimeType'])
-      };
-
-  @override
-  Map<String, dynamic> toJson(ChatItem object) => switch (object.runtimeType) {
-        const (ChatMessage) => (object as ChatMessage).toJson()
-          ..['runtimeType'] = 'ChatMessage',
-        const (ChatCall) => (object as ChatCall).toJson()
-          ..['runtimeType'] = 'ChatCall',
-        const (ChatInfo) => (object as ChatInfo).toJson()
-          ..['runtimeType'] = 'ChatInfo',
-        const (ChatForward) => (object as ChatForward).toJson()
-          ..['runtimeType'] = 'ChatForward',
-        _ => throw UnimplementedError(object.runtimeType.toString()),
-      };
 }

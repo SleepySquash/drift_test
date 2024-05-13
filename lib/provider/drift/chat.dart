@@ -53,7 +53,7 @@ class ChatDriftProvider extends DriftProviderBase {
     await stmt.go();
   }
 
-  Stream<MapChangeNotification<ChatId, Chat>> watch() {
+  Stream<List<MapChangeNotification<ChatId, Chat>>> watch() {
     return db.select(db.chats).watch().map((chats) {
       return {for (var e in chats.map(_ChatDb.fromDb)) e.id: e};
     }).changes();

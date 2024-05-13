@@ -74,7 +74,7 @@ class ChatInfoView extends StatelessWidget {
                       icon: const Icon(Icons.add),
                     ),
                   ),
-                  ...rxChat.members.map((e) {
+                  ...rxChat.members.items.values.map((e) {
                     return ListTile(
                       leading: SizedBox.square(
                         dimension: 32,

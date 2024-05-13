@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/provider/drift/user.dart';
-import 'package:drift_test/store/drift/user_rx.dart';
+import 'package:drift_test/store/user_rx.dart';
 import 'package:drift_test/util/diff.dart';
 import 'package:get/get.dart';
 import 'package:log_me/log_me.dart';

@@ -2,7 +2,7 @@ import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/provider/drift/chat_member.dart';
 import 'package:drift_test/provider/drift/drift.dart';
 import 'package:drift_test/provider/drift/user.dart';
-import 'package:drift_test/store/drift/user.dart';
+import 'package:drift_test/store/user.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:log_me/log_me.dart';
@@ -11,10 +11,10 @@ import 'domain/repository/auth.dart';
 import 'domain/repository/chat.dart';
 import 'provider/drift/account.dart';
 import 'provider/drift/chat_item.dart';
-import 'store/drift/auth.dart';
+import 'store/auth.dart';
 import 'ui/page/home/view.dart';
 import 'provider/drift/chat.dart';
-import 'store/drift/chat.dart';
+import 'store/chat.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

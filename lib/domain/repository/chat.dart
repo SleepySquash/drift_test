@@ -1,9 +1,11 @@
 import 'package:drift_test/domain/model/chat_item.dart';
+import 'package:drift_test/domain/model/chat_member.dart';
 import 'package:drift_test/domain/model/chat_message.dart';
 import 'package:drift_test/domain/model/user.dart';
 import 'package:get/get.dart';
 
 import '/domain/model/chat.dart';
+import 'pagination.dart';
 import 'user.dart';
 
 abstract class AbstractChatRepository {
@@ -20,8 +22,8 @@ abstract class AbstractChatRepository {
 abstract class RxChat {
   Rx<Chat> get chat;
 
-  RxList<RxChatMember> get members; // TODO: Use pagination.
-  RxList<Rx<ChatItem>> get items; // TODO: Use pagination.
+  Paginated<UserId, RxChatMember> get members;
+  Paginated<ChatItemId, Rx<ChatItem>> get items;
 
   ChatId get id => chat.value.id;
 
@@ -29,12 +31,18 @@ abstract class RxChat {
   Future<void> deleteMember(UserId id);
 
   Future<void> updateAvatar(String url);
-
-  Future<void> around();
 }
 
 class RxChatMember {
   const RxChatMember(this.user, this.joinedAt);
+
   final RxUser user;
   final DateTime joinedAt;
+
+  UserId get id => user.id;
+
+  ChatMember toChatMember() => ChatMember(
+        user: user.user.value,
+        joinedAt: joinedAt,
+      );
 }

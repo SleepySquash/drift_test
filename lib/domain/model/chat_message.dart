@@ -31,4 +31,7 @@ class ChatMessage extends ChatItem {
   @override
   Map<String, dynamic> toJson() =>
       _$ChatMessageToJson(this)..['runtimeType'] = 'ChatMessage';
+
+  @override
+  String toString() => 'ChatMessage($text)';
 }

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/domain/repository/user.dart';
-import 'package:drift_test/store/drift/user.dart';
+import 'package:drift_test/store/user.dart';
 import 'package:get/get.dart';
 
 class RxUserImpl extends RxUser {

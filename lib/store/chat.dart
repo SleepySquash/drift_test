@@ -8,8 +8,8 @@ import 'package:drift_test/domain/repository/user.dart';
 import 'package:drift_test/provider/drift/chat.dart';
 import 'package:drift_test/provider/drift/chat_item.dart';
 import 'package:drift_test/provider/drift/chat_member.dart';
-import 'package:drift_test/store/drift/chat_rx.dart';
-import 'package:drift_test/store/drift/user.dart';
+import 'package:drift_test/store/chat_rx.dart';
+import 'package:drift_test/store/user.dart';
 import 'package:drift_test/util/diff.dart';
 import 'package:get/get.dart';
 import 'package:log_me/log_me.dart';
@@ -42,22 +42,24 @@ class ChatRepository extends DisposableInterface
   @override
   void onInit() {
     _subscription ??= chatDrift.watch().listen((e) {
-      Log.debug('_provider.watch(${e.op})', '$runtimeType');
+      Log.debug('_provider.watch(${e.map((e) => e.op)})', '$runtimeType');
 
-      switch (e.op) {
-        case OperationKind.added:
-        case OperationKind.updated:
-          final RxChatImpl? rxChat = chats[e.key];
-          if (rxChat == null) {
-            put(e.value!);
-          } else {
-            rxChat.chat.value = e.value!;
-          }
-          break;
+      for (var o in e) {
+        switch (o.op) {
+          case OperationKind.added:
+          case OperationKind.updated:
+            final RxChatImpl? rxChat = chats[o.key];
+            if (rxChat == null) {
+              put(o.value!);
+            } else {
+              rxChat.chat.value = o.value!;
+            }
+            break;
 
-        case OperationKind.removed:
-          onChatDeleted(e.key!);
-          break;
+          case OperationKind.removed:
+            onChatDeleted(o.key!);
+            break;
+        }
       }
     });
 
@@ -104,21 +106,29 @@ class ChatRepository extends DisposableInterface
 
   @override
   Future<void> create(Chat chat) async {
+    Log.debug('create($chat)', '$runtimeType');
+
     await chatDrift.create(chat);
   }
 
   @override
   Future<void> delete(ChatId id) async {
+    Log.debug('delete($id)', '$runtimeType');
+
     await chatDrift.delete(id);
   }
 
   @override
   Future<void> postMessage(ChatMessage message) async {
+    Log.debug('postMessage($message)', '$runtimeType');
+
     await itemDrift.create(message);
   }
 
   @override
   Future<void> deleteItem(ChatItemId itemId) async {
+    Log.debug('deleteItem($itemId)', '$runtimeType');
+
     await itemDrift.delete(itemId);
   }
 

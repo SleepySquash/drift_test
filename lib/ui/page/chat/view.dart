@@ -59,11 +59,28 @@ class ChatView extends StatelessWidget {
               children: [
                 Expanded(
                   child: ListView(
-                    children: rxChat.items.map((e) {
-                      return Obx(() {
-                        return ChatItemWidget(e.value);
-                      });
-                    }).toList(),
+                    controller: c.scrollController,
+                    children: [
+                      if (c.chat?.items.hasPrevious.value == true)
+                        ElevatedButton(
+                          onPressed: c.chat?.items.previous,
+                          child: const Text('Previous'),
+                        ),
+                      ...rxChat.items.items.values.map((e) {
+                        return Obx(() {
+                          return ChatItemWidget(
+                            e.value,
+                            onEdit: () {},
+                            onDelete: () => c.deleteItem(e.value),
+                          );
+                        });
+                      }),
+                      if (c.chat?.items.hasNext.value == true)
+                        ElevatedButton(
+                          onPressed: c.chat?.items.next,
+                          child: const Text('Next'),
+                        ),
+                    ],
                   ),
                 ),
                 Row(
