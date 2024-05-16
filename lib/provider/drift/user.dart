@@ -1,100 +1,126 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '/domain/model/user.dart';
 import '/util/diff.dart';
+import 'chat.dart';
+import 'common.dart';
 import 'drift.dart';
 
-class DtoUsers extends Table {
-  TextColumn get id => text().unique()();
-  TextColumn get name => text()();
-  DateTimeColumn get createdAt => dateTime()();
+@DataClassName('UserRow')
+class Users extends Table {
+  @override
+  Set<Column> get primaryKey => {id};
+
+  TextColumn get id => text()();
+  TextColumn get num => text().unique()();
+  TextColumn get name => text().nullable()();
+  TextColumn get bio => text().nullable()();
+  TextColumn get avatar => text().nullable()(); // JSON
+  TextColumn get callCover => text().nullable()(); // JSON
+  IntColumn get mutualContactsCount =>
+      integer().withDefault(const Constant(0))();
+  BoolColumn get online => boolean().withDefault(const Constant(false))();
+  IntColumn get presenceIndex => integer().nullable()();
+  TextColumn get status => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  TextColumn get dialog => text().nullable().references(
+        Chats,
+        #id,
+        onDelete: KeyAction.setNull,
+        onUpdate: KeyAction.cascade,
+      )();
+  IntColumn get createdAt => integer().map(const DateTimeConverter())();
 }
 
-class UserDriftProvider {
-  UserDriftProvider(this.database);
+class UserDriftProvider extends DriftProviderBase {
+  UserDriftProvider(super.database);
 
-  final DriftProvider database;
+  Future<List<User>> users({int? limit, int? offset}) async {
+    final stmt = db.select(db.users);
+    stmt.orderBy([(u) => OrderingTerm.desc(u.createdAt)]);
 
-  Future<List<User>> users() async {
-    final dto = await database.select(database.dtoUsers).get();
-    return dto.map(_UserDb.fromDb).toList();
+    if (limit != null) {
+      stmt.limit(limit, offset: offset);
+    }
+
+    final List<UserRow> rows = await stmt.get();
+    return rows.map(UserDb.fromDb).toList();
   }
 
-  Future<void> create(User user) async {
-    final int affected =
-        await database.into(database.dtoUsers).insert(_UserDb.toDb(user));
+  Future<User?> user(UserId id) async {
+    final dto = await (db.select(db.users)..where((u) => u.id.equals(id.val)))
+        .getSingleOrNull();
 
-    print('create($user): affected $affected rows');
+    if (dto == null) {
+      return null;
+    }
+
+    return UserDb.fromDb(dto);
+  }
+
+  Future<User> create(User user) async {
+    return UserDb.fromDb(await db.into(db.users).insertReturning(user.toDb()));
+  }
+
+  Future<void> update(User user) async {
+    final stmt = db.update(db.users);
+    await stmt.replace(user.toDb());
   }
 
   Future<void> delete(UserId id) async {
-    final stmt = database.delete(database.dtoUsers)
-      ..where((e) => e.id.equals(id.val));
-    final int affected = await stmt.go();
-
-    print('delete($id): affected $affected rows');
+    final stmt = db.delete(db.users);
+    stmt.where((e) => e.id.equals(id.val));
+    await stmt.go();
   }
 
   Stream<MapChangeNotification<UserId, User>> watch() {
-    // final query = database.select(database.dtoUsers);
-    // final updateFilter = TableUpdateQuery.onTable(
-    //   database.dtoUsers,
-    //   limitUpdateKind: UpdateKind.insert,
-    // );
+    final stmt = db.select(db.users);
+    stmt.orderBy([(u) => OrderingTerm.desc(u.createdAt)]);
 
-    // return database.tableUpdates(updateFilter).asyncMap(query.get());
-    // database
-    //     .tableUpdates(TableUpdateQuery.onTable(yourTable,
-    //         limitUpdateKind: UpdateKind.update))
-    //     .asyncMap(query.get());
+    return const Stream.empty();
 
-    // database
-    //     .tableUpdates(TableUpdateQuery.onTable(database.dtoUsers))
-    //     .asyncExpand(
-    //   (events) async* {
-    //     for (var e in events) {
-    //       print('tableUpdates(): ${e.kind}');
+    // return stmt
+    //     .watch()
+    //     .map((users) => {for (var e in users.map(UserDb.fromDb)) e.id: e})
+    //     .changes();
+  }
 
-    //       switch (e.kind) {
-    //         case UpdateKind.insert:
-    //           break;
+  Stream<User?> watchSingle(UserId id) {
+    final stmt = db.select(db.users)..where((u) => u.id.equals(id.val));
 
-    //         case UpdateKind.update:
-    //           break;
+    return stmt.watch().map((e) {
+      if (e.isEmpty) {
+        return null;
+      }
 
-    //         case UpdateKind.delete:
-    //           break;
-
-    //         case null:
-    //           // No-op.
-    //           break;
-    //       }
-    //     }
-    //   },
-    // ).listen((_) {});
-
-    return database
-        .select(database.dtoUsers)
-        .watch()
-        .map((users) => {for (var e in users.map(_UserDb.fromDb)) e.id: e})
-        .changes();
+      return UserDb.fromDb(e.first);
+    });
   }
 }
 
-extension _UserDb on User {
-  static User fromDb(DtoUser e) {
+extension UserDb on User {
+  static User fromDb(UserRow e) {
     return User(
       id: UserId(e.id),
-      name: UserName(e.name),
+      num: UserNum(e.num),
+      name: e.name == null ? null : UserName(e.name!),
+      avatar: e.avatar == null ? null : Avatar.fromJson(jsonDecode(e.avatar!)),
       createdAt: e.createdAt,
     );
   }
 
-  static DtoUser toDb(User e) {
-    return DtoUser(
-      id: e.id.val,
-      name: e.name.val,
-      createdAt: e.createdAt,
+  UserRow toDb() {
+    return UserRow(
+      id: id.val,
+      num: this.num.val,
+      name: name?.val,
+      createdAt: createdAt,
+      online: false,
+      isDeleted: false,
+      mutualContactsCount: 0,
+      avatar: avatar == null ? null : jsonEncode(avatar?.toJson()),
     );
   }
 }
