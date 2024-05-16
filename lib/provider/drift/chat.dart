@@ -4,6 +4,7 @@ import 'package:drift_test/domain/model/user.dart';
 import 'package:drift_test/util/diff.dart';
 
 import '/domain/model/chat.dart';
+import 'common.dart';
 import 'drift.dart';
 
 @DataClassName('ChatRow')
@@ -14,7 +15,7 @@ class Chats extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
   TextColumn get avatar => text().nullable()(); // JSON
-  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get createdAt => integer().map(const DateTimeConverter())();
 }
 
 class ChatDriftProvider extends DriftProviderBase {

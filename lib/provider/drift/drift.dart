@@ -5,6 +5,7 @@ import 'account.dart';
 import 'chat_item.dart';
 import 'connection/connection.dart' as impl;
 
+import 'common.dart';
 import 'chat.dart';
 import '/domain/model/chat_item.dart';
 import 'user.dart';
@@ -18,7 +19,7 @@ class DriftProvider extends _$DriftProvider {
   }
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {

@@ -6,6 +6,7 @@ import 'package:drift_test/util/diff.dart';
 
 import '/domain/model/chat.dart';
 import 'chat.dart';
+import 'common.dart';
 import 'drift.dart';
 import 'user.dart';
 
@@ -40,7 +41,7 @@ class ChatItems extends Table {
   TextColumn get id => text()();
   TextColumn get chatId => text().references(Chats, #id)();
   TextColumn get authorId => text().references(Users, #id)();
-  DateTimeColumn get at => dateTime()();
+  IntColumn get at => integer().map(const DateTimeConverter())();
   IntColumn get status => intEnum<SendingStatus>()();
 
   // JSON for ChatMessage/ChatCall/ChatInfo/ChatForward specific data???
@@ -54,7 +55,7 @@ class ChatItemViews extends Table {
 
   TextColumn get chatId => text().references(Chats, #id)();
   TextColumn get chatItemId => text().references(ChatItems, #id)();
-  DateTimeColumn get at => dateTime()();
+  IntColumn get at => integer().map(const DateTimeConverter())();
 }
 
 class ChatItemDriftProvider {
@@ -66,19 +67,9 @@ class ChatItemDriftProvider {
     ChatId chatId, {
     int? limit,
     int? offset,
-    DateTime? biggerThan,
-    DateTime? lessThan,
   }) async {
     final stmt = _database.select(_database.chatItems);
     stmt.where((u) => u.chatId.equals(chatId.val));
-
-    if (biggerThan != null) {
-      stmt.where((u) => u.at.isBiggerThanValue(biggerThan));
-    }
-
-    if (lessThan != null) {
-      stmt.where((u) => u.at.isSmallerThanValue(lessThan));
-    }
 
     stmt.orderBy([(u) => OrderingTerm.desc(u.at)]);
 
@@ -114,19 +105,9 @@ class ChatItemDriftProvider {
     ChatId chatId, {
     int? limit,
     int? offset,
-    DateTime? biggerThan,
-    DateTime? lessThan,
   }) {
     final stmt = _database.select(_database.chatItems);
     stmt.where((u) => u.chatId.equals(chatId.val));
-
-    if (biggerThan != null) {
-      stmt.where((u) => u.at.isBiggerThanValue(biggerThan));
-    }
-
-    if (lessThan != null) {
-      stmt.where((u) => u.at.isSmallerThanValue(lessThan));
-    }
 
     stmt.orderBy([(u) => OrderingTerm.desc(u.at)]);
 

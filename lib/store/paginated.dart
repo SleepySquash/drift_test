@@ -85,8 +85,8 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
       final page = await provider.around(null, perPage);
       _subscribeTo(page);
 
-      hasNext.value = false;
-      hasPrevious.value = true;
+      hasNext.value = page.hasNext;
+      hasPrevious.value = page.hasPrevious;
     });
   }
 
@@ -108,7 +108,7 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
       final page = await provider.after(items.last, perPage);
       _subscribeTo(page);
 
-      hasNext.value = page.length >= perPage;
+      hasNext.value = page.hasNext;
     });
   }
 
@@ -130,7 +130,7 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
       final page = await provider.before(items.first, perPage);
       _subscribeTo(page);
 
-      hasPrevious.value = page.length >= perPage;
+      hasPrevious.value = page.hasPrevious;
     });
   }
 
@@ -140,6 +140,8 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
       Log.debug('clear()', '$runtimeType');
 
       items.clear();
+      hasPrevious.value = false;
+      hasNext.value = false;
     });
   }
 
@@ -183,13 +185,13 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
     return removed;
   }
 
-  void _subscribeTo(RxObsList<T> page) {
-    for (var e in page) {
+  void _subscribeTo(Page<T> page) {
+    for (var e in page.edges) {
       items[onKey(e)] = e;
     }
 
     _subscriptions.add(
-      page.changes.listen((e) {
+      page.edges.changes.listen((e) {
         switch (e.op) {
           case OperationKind.added:
           case OperationKind.updated:
@@ -205,11 +207,23 @@ class PaginatedImpl<K, T> extends Paginated<K, T> {
   }
 }
 
+class Page<T> {
+  const Page({
+    required this.edges,
+    required this.hasPrevious,
+    required this.hasNext,
+  });
+
+  final RxObsList<T> edges;
+  final bool hasPrevious;
+  final bool hasNext;
+}
+
 abstract class PageProvider<T> {
   Future<void> dispose();
-  Future<RxObsList<T>> around(T? item, int count);
-  Future<RxObsList<T>> after(T item, int count);
-  Future<RxObsList<T>> before(T item, int count);
+  Future<Page<T>> around(T? item, int count);
+  Future<Page<T>> after(T item, int count);
+  Future<Page<T>> before(T item, int count);
   Future<void> put(T item);
   Future<void> remove(T item);
   Future<void> clear();

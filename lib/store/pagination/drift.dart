@@ -17,47 +17,76 @@ class DriftPageProvider<K, T> extends PageProvider<T> {
   final K Function(T) onKey;
 
   final Stream<List<MapChangeNotification<K, T>>> Function({
-    T? before,
-    T? after,
-    required int count,
+    required int limit,
+    required int offset,
   }) fetch;
 
   final Future<void> Function(T item)? add;
   final Future<void> Function(T item)? delete;
   final Future<void> Function()? reset;
 
-  final List<StreamSubscription> _subscriptions = [];
+  int offset = 0;
+  int limit = 0;
+
+  final RxObsList<T> list = RxObsList();
+
+  StreamSubscription? _subscription;
 
   @override
   Future<void> dispose() async {
-    for (var e in _subscriptions) {
-      e.cancel();
-    }
-    _subscriptions.clear();
+    _subscription?.cancel();
   }
 
   @override
-  Future<RxObsList<T>> around(T? item, int count) async {
-    return await _page(count);
+  Future<Page<T>> around(T? item, int count) async {
+    offset = 0;
+    limit = count;
+
+    return Page(
+      edges: await _page(),
+      hasPrevious: true,
+      hasNext: false,
+    );
   }
 
   @override
-  Future<RxObsList<T>> after(T item, int count) async {
-    return await _page(count, after: item);
+  Future<Page<T>> after(T item, int count) async {
+    limit += count * 2;
+    offset += count; // ??
+
+    final int edgesBefore = list.length;
+    final RxObsList<T> edges = await _page();
+
+    return Page(
+      edges: edges,
+      hasNext: edges.length - edgesBefore < count,
+      hasPrevious: true,
+    );
   }
 
   @override
-  Future<RxObsList<T>> before(T item, int count) async {
-    return await _page(count, before: item);
+  Future<Page<T>> before(T item, int count) async {
+    limit += count;
+
+    final int edgesBefore = list.length;
+    final RxObsList<T> edges = await _page();
+
+    return Page(
+      edges: edges,
+      hasNext: true,
+      hasPrevious: edges.length - edgesBefore >= count,
+    );
   }
 
   @override
   Future<void> put(T item) async {
+    limit += 1;
     await add?.call(item);
   }
 
   @override
   Future<void> remove(T item) async {
+    limit -= 1;
     await delete?.call(item);
   }
 
@@ -66,17 +95,13 @@ class DriftPageProvider<K, T> extends PageProvider<T> {
     await reset?.call();
   }
 
-  Future<RxObsList<T>> _page(int count, {T? after, T? before}) async {
+  Future<RxObsList<T>> _page() async {
     final Completer completer = Completer();
-    final RxObsList<T> list = RxObsList();
 
-    _subscriptions.add(fetch(
-      count: count,
-      after: after,
-      before: before,
-    ).listen((e) {
+    _subscription?.cancel();
+    _subscription = fetch(limit: limit, offset: offset).listen((e) {
       Log.debug(
-        '_page($count, after: $after, before: $before) fired: ${e.length}',
+        '_page(limit: $limit, offset: $offset) fired: ${e.length}',
         '$runtimeType',
       );
 
@@ -87,9 +112,6 @@ class DriftPageProvider<K, T> extends PageProvider<T> {
       for (var o in e) {
         switch (o.op) {
           case OperationKind.added:
-            list.add(o.value as T);
-            break;
-
           case OperationKind.updated:
             final int i = list.indexWhere((m) => onKey(m) == o.key);
             if (i == -1) {
@@ -104,7 +126,7 @@ class DriftPageProvider<K, T> extends PageProvider<T> {
             break;
         }
       }
-    }));
+    });
 
     await completer.future;
 

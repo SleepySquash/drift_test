@@ -7,6 +7,7 @@ import 'package:drift_test/provider/drift/user.dart';
 import 'package:drift_test/util/diff.dart';
 
 import '/domain/model/user.dart';
+import 'common.dart';
 import 'drift.dart';
 
 @DataClassName('ChatMemberRow')
@@ -28,7 +29,7 @@ class ChatMembers extends Table {
         onDelete: KeyAction.cascade,
       )();
 
-  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get createdAt => integer().map(const DateTimeConverter())();
 }
 
 class ChatMemberDriftProvider {
@@ -42,8 +43,6 @@ class ChatMemberDriftProvider {
     ChatId id, {
     int? limit,
     int? offset,
-    DateTime? biggerThan,
-    DateTime? lessThan,
   }) async {
     final stmt = _database.select(_database.chatMembers).join([
       innerJoin(
@@ -52,14 +51,6 @@ class ChatMemberDriftProvider {
       )
     ]);
     stmt.where(_database.chatMembers.chatId.equals(id.val));
-
-    if (biggerThan != null) {
-      stmt.where(_database.chatMembers.createdAt.isBiggerThanValue(biggerThan));
-    }
-
-    if (lessThan != null) {
-      stmt.where(_database.chatMembers.createdAt.isSmallerThanValue(lessThan));
-    }
 
     if (limit != null) {
       stmt.limit(limit, offset: offset);

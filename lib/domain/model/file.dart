@@ -39,6 +39,8 @@ class PlainFile extends StorageFile {
 
   factory PlainFile.fromJson(Map<String, dynamic> json) =>
       _$PlainFileFromJson(json);
+
+  @override
   Map<String, dynamic> toJson() => _$PlainFileToJson(this);
 }
 
@@ -59,28 +61,7 @@ class ImageFile extends StorageFile {
 
   factory ImageFile.fromJson(Map<String, dynamic> json) =>
       _$ImageFileFromJson(json);
+
+  @override
   Map<String, dynamic> toJson() => _$ImageFileToJson(this);
-}
-
-class _StorageFileConverter
-    implements JsonConverter<StorageFile, Map<String, dynamic>> {
-  const _StorageFileConverter();
-
-  @override
-  StorageFile fromJson(Map<String, dynamic> json) =>
-      switch (json['runtimeType']) {
-        'PlainFile' => PlainFile.fromJson(json),
-        'ImageFile' => ImageFile.fromJson(json),
-        _ => throw UnimplementedError(json['runtimeType'])
-      };
-
-  @override
-  Map<String, dynamic> toJson(StorageFile object) =>
-      switch (object.runtimeType) {
-        const (PlainFile) => (object as PlainFile).toJson()
-          ..['runtimeType'] = 'PlainFile',
-        const (ImageFile) => (object as ImageFile).toJson()
-          ..['runtimeType'] = 'ImageFile',
-        _ => throw UnimplementedError(object.runtimeType.toString()),
-      };
 }

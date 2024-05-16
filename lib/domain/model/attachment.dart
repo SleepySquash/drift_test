@@ -48,6 +48,8 @@ class ImageAttachment extends Attachment {
 
   factory ImageAttachment.fromJson(Map<String, dynamic> json) =>
       _$ImageAttachmentFromJson(json);
+
+  @override
   Map<String, dynamic> toJson() => _$ImageAttachmentToJson(this);
 }
 
@@ -61,6 +63,8 @@ class FileAttachment extends Attachment {
 
   factory FileAttachment.fromJson(Map<String, dynamic> json) =>
       _$FileAttachmentFromJson(json);
+
+  @override
   Map<String, dynamic> toJson() => _$FileAttachmentToJson(this);
 }
 

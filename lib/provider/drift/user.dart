@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '/domain/model/user.dart';
 import '/util/diff.dart';
 import 'chat.dart';
+import 'common.dart';
 import 'drift.dart';
 
 @DataClassName('UserRow')
@@ -30,7 +31,7 @@ class Users extends Table {
         onDelete: KeyAction.setNull,
         onUpdate: KeyAction.cascade,
       )();
-  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get createdAt => integer().map(const DateTimeConverter())();
 }
 
 class UserDriftProvider extends DriftProviderBase {

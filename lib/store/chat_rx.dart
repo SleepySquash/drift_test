@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:drift_test/domain/model/chat.dart';
 import 'package:drift_test/domain/model/chat_item.dart';
 import 'package:drift_test/domain/model/chat_member.dart';
@@ -23,7 +22,7 @@ class RxChatImpl extends RxChat {
   @override
   late final PaginatedImpl<UserId, RxChatMember> members = PaginatedImpl(
     provider: DriftPageProvider(
-      fetch: ({after, before, required count}) {
+      fetch: ({required limit, required offset}) {
         return const Stream.empty();
         // final result = await _repository.membersDrift.members(
         //   id,
@@ -53,43 +52,21 @@ class RxChatImpl extends RxChat {
     ),
     compare: (a, b) => a.joinedAt.compareTo(b.joinedAt),
     onKey: (e) => e.id,
+    perPage: 15,
   );
 
   @override
   late final PaginatedImpl<ChatItemId, Rx<ChatItem>> items = PaginatedImpl(
     provider: DriftPageProvider(
-      fetch: ({after, before, required count}) {
+      fetch: ({required limit, required offset}) {
         // Must subscribe to the items fetched via `watch` somehow.
         // Must be able to delete items easily and identify those in the list.
         // Must be able to update/create items easily.
 
-        // int offset = 0;
+        int offset = 0;
 
-        // if (after != null) {
-        //   final int? pos = items.items.keys.indexed
-        //       .firstWhereOrNull((e) => e.$2 == after.value.id)
-        //       ?.$1;
-
-        //   if (pos != null) {
-        //     offset = items.items.keys.length - pos;
-        //   }
-        // } else if (before != null) {
-        //   final int? pos = items.items.keys.indexed
-        //       .firstWhereOrNull((e) => e.$2 == before.value.id)
-        //       ?.$1;
-
-        //   if (pos != null) {
-        //     offset = items.items.keys.length - pos;
-        //   }
-        // }
-
-        final result = _repository.itemDrift.watch(
-          id,
-          limit: count,
-          // offset: offset,
-          biggerThan: after?.value.at,
-          lessThan: before?.value.at,
-        );
+        final Stream<List<MapChangeNotification<ChatItemId, ChatItem>>> result =
+            _repository.itemDrift.watch(id, limit: limit, offset: offset);
 
         return result.map((e) {
           return e.map((m) {
@@ -109,6 +86,7 @@ class RxChatImpl extends RxChat {
     ),
     compare: (a, b) => a.value.at.compareTo(b.value.at),
     onKey: (e) => e.value.id,
+    perPage: 10,
   );
 
   final ChatRepository _repository;
